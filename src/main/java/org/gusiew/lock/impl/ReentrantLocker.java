@@ -11,7 +11,7 @@ import static org.gusiew.lock.util.ConditionUtil.not;
  *
  * <p>Has synchronized/wait like behavior:
  * <ul>
- *   <li>Allows reentrance but needs to be released same number of times as acquired</li>
+ *   <li>Allows holder thread to reenter but needs to be released same number of times as acquired</li>
  *   <li>Has synchronized/wait like semantics (does not provide fairness)</li>
  *   <li>Ignores interruptions</li>
  *   <li>Mutual exclusive locking, may deadlock if used inappropriately</li>

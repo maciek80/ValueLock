@@ -474,11 +474,9 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
     }
 
     private ScenarioThread assertHoldsActiveMutex(List<ScenarioThread> scenarioThreads, String value) {
-        //TODO Nasty code needs improvement
         TestReentrantMutex activeMutex = TestReentrantMutex.getFromActiveMutexes(value);
         List<ScenarioThread> activeThreads = scenarioThreads.stream().filter(t -> t.equals(activeMutex.getHolderThread())).collect(toList());
-        assertFalse(activeThreads.size() == 0);
-        assertFalse(activeThreads.size() > 1);
+        assertEquals(1, activeThreads.size());
         return activeThreads.get(0);
     }
 
@@ -572,9 +570,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
     }
 
     private BiConsumer<TestReentrantLocker, TestThreadMutexState> releaseOnlyScenario(TestReentrantMutex m) {
-        return (l, ms) -> {
-            m.release();
-        };
+        return (l, ms) -> m.release();
     }
 
     private void resumeAndDelay(ScenarioThread... threads) throws InterruptedException {

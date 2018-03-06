@@ -11,13 +11,26 @@ public interface Mutex {
     void release();
 
     /**
-     * See @link Locker}
+     * @see Locker
      *
      * @throws Exception propagated exception
      */
-    static void using(Mutex mutex, MutexRunnable mutexRunnable) throws Exception {
+    static void withRunnable(Mutex mutex, Runnable runnable) throws Exception {
         try {
-            mutexRunnable.run();
+            runnable.run();
+        } finally {
+            mutex.release();
+        }
+    }
+
+    /**
+     * @see Locker
+     *
+     * @throws Exception propagated exception
+     */
+    static void withThrowsRunnable(Mutex mutex, ThrowsRunnable throwsRunnable) throws Exception {
+        try {
+            throwsRunnable.run();
         } finally {
             mutex.release();
         }
@@ -25,9 +38,11 @@ public interface Mutex {
 
     /**
      * Runnable that throws Exception
+     *
+     * @see Locker
      */
     @FunctionalInterface
-    interface MutexRunnable {
+    interface ThrowsRunnable {
         void run() throws Exception;
     }
 }

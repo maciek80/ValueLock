@@ -11,10 +11,16 @@ package org.gusiew.lock.api;
  *      Thread A and B compete for same mutex
  *   </pre>
  *   <p>Usages
- *  Functional style
+ *  Functional style with code that does not throw checked exceptions
  *  <pre> {@code
  *     Locker l = new ReentrantLocker();
- *     Mutex.using(l.lock(value), () -> {...});
+ *     withRunnable(l.lock(value), () -> {...})
+ *  }
+ *  </pre>
+ *  Functional style with code that throws checked exceptions
+ *  <pre> {@code
+ *     Locker l = new ReentrantLocker();
+ *     withThrowsRunnable(l.lock(value), () -> {...})
  *  }
  *  </pre>
  *  Imperative style

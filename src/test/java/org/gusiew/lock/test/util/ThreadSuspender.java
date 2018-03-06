@@ -9,6 +9,19 @@ public class ThreadSuspender {
 
     private volatile boolean suspended = false;
 
+    public static final ThreadSuspender NULL_OBJECT = new ThreadSuspender() {
+        @Override
+        public void suspend() {}
+
+        @Override
+        public void resume() {}
+
+        @Override
+        public boolean isSuspended() {
+            return false;
+        }
+    };
+
     /**
      * @throws IllegalStateException if already suspended
      */

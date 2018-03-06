@@ -10,8 +10,7 @@ public class TestReentrantLocker extends ReentrantLocker {
 
     public TestReentrantLocker() {
         super();
-        //FIXME use null object to get rid of warnings
-        threadSuspender = null;
+        threadSuspender = ThreadSuspender.NULL_OBJECT;
     }
 
     TestReentrantLocker(ThreadSuspender threadSuspender, boolean suspendDuringLocking, boolean throwWhenInterrupted) {
