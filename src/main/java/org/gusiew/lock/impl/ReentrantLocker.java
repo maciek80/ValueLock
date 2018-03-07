@@ -26,6 +26,8 @@ public class ReentrantLocker implements Locker {
         ReentrantMutex reentrantMutex;
         boolean tryAcquireState = false;
 
+        validate(value);
+
         synchronized (ACTIVE_MUTEXES) {
             reentrantMutex = ACTIVE_MUTEXES.get(value);
             if (reentrantMutex == null) {
@@ -43,6 +45,12 @@ public class ReentrantLocker implements Locker {
         }
 
         return reentrantMutex;
+    }
+
+    private void validate(Object value) {
+        if(value == null) {
+            throw new NullPointerException();
+        }
     }
 
     void activeMutexesUpdated() {}

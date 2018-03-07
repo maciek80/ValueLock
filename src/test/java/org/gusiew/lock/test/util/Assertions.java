@@ -8,10 +8,15 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Assertions {
-    //TODO Consider improvements to make API more consistent and concise
-    public static void assertActive(TestReentrantMutex mutex, int entranceCount) {
+    //TODO Consider improvements to make API more consistent and concise, perhaps bundle with driver (fluent API)
+
+    public static void assertActiveAndHeldByCurrentThread(TestReentrantMutex mutex) {
         assertTrue(TestReentrantMutex.isActiveMutex(mutex.getLock()));
         assertTrue(mutex.isHeldByCurrentThread());
+    }
+
+    public static void assertActiveAndHeldByCurrentThreadWithEntrances(TestReentrantMutex mutex, int entranceCount) {
+        assertActiveAndHeldByCurrentThread(mutex);
         assertEquals(entranceCount, mutex.getEntranceCount());
     }
 
@@ -35,6 +40,10 @@ public class Assertions {
 
     public static void assertMutexNotActive(Object value) {
         assertNull(TestReentrantMutex.getFromActiveMutexes(value));
+    }
+
+    public static void assertActiveMutexesEmpty() {
+        assertTrue(TestReentrantMutex.activeMutexesEmpty());
     }
 
     public static void assertMutexActiveButNotHeld(Object value) {

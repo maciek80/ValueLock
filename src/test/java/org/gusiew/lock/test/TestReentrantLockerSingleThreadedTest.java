@@ -14,9 +14,9 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static org.gusiew.lock.test.util.Assertions.assertActive;
-import static org.gusiew.lock.test.util.Assertions.assertNotActive;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.gusiew.lock.test.util.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest {
 
@@ -27,14 +27,20 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
     private static final boolean IGNORE_INTERRUPTIONS = false;
 
     @Test
+    void shouldThrowWhenLockingOnNull() {
+        assertThrows(NullPointerException.class, () -> locker.lock(null));
+        assertActiveMutexesEmpty();
+    }
+
+    //TODO Consider validating active mutexes sizes
+
+    @Test
     void shouldAcquireMutexForCurrentThread() {
         //when
         TestReentrantMutex mutex = locker.lock(VALUE_A);
         //then
         assertEquals(VALUE_A, mutex.getLock());
-        assertTrue(mutex.isHeldByCurrentThread());
-        assertTrue(mutex.noWaitingThreads());
-        assertTrue(TestReentrantMutex.isActiveMutex(mutex.getLock()));
+        assertActiveAndHeldByCurrentThread(mutex);
         //teardown
         mutex.release();
     }
@@ -52,10 +58,10 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
     void shouldThrowOnReleaseWithoutLocking() {
         //given
         TestReentrantMutex mutex = new TestReentrantMutex(VALUE_A, ZERO_ENTRIES, IGNORE_INTERRUPTIONS);
-        assertNull(TestReentrantMutex.getFromActiveMutexes(VALUE_A));
+        assertActiveMutexesEmpty();
         //then
         assertThrows(MutexNotActiveException.class, mutex::release);
-        assertNull(TestReentrantMutex.getFromActiveMutexes(VALUE_A));
+        assertActiveMutexesEmpty();
     }
 
     @Test
@@ -79,10 +85,8 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         TestReentrantMutex reentrantMutex = testLocker.lock(testValue);
         TestReentrantMutex otherReentrantMutex = otherTestLocker.lock(otherTestValue);
         //then
-        assertNotNull(reentrantMutex);
-        assertNotNull(otherReentrantMutex);
-        assertTrue(reentrantMutex.isHeld());
-        assertTrue(otherReentrantMutex.isHeld());
+        assertActiveAndHeldByCurrentThread(reentrantMutex);
+        assertActiveAndHeldByCurrentThread(otherReentrantMutex);
         assertEquals(fixture.expectedResult, reentrantMutex == otherReentrantMutex);
 
         //teardown
@@ -119,15 +123,15 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         int entrances = sameValuesToLock.size();
 
         //then
-        assertActive(mutex, entrances);
+        assertActiveAndHeldByCurrentThreadWithEntrances(mutex, entrances);
 
         //then
         mutex.release();
-        assertActive(mutex, --entrances);
+        assertActiveAndHeldByCurrentThreadWithEntrances(mutex, --entrances);
 
         //then
         mutex.release();
-        assertActive(mutex, --entrances);
+        assertActiveAndHeldByCurrentThreadWithEntrances(mutex, --entrances);
 
         //then
         mutex.release();
@@ -159,7 +163,6 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         //teardown
         mutexB.release();
     }
-
 
     private static Fixture fixture(LockerAndValue lockerAndValue, LockerAndValue otherLockerAndValue, boolean expectedResult) {
         return new Fixture(lockerAndValue, otherLockerAndValue, expectedResult);

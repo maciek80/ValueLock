@@ -70,4 +70,8 @@ public class TestReentrantMutex extends ReentrantMutex {
             throw new MutexException();
         }
     }
+
+    public static boolean activeMutexesEmpty() {
+        return getActiveMutexes().isEmpty();
+    }
 }
