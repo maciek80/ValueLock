@@ -13,9 +13,8 @@ public interface Mutex {
     /**
      * @see Locker
      *
-     * @throws Exception propagated exception
      */
-    static void withRunnable(Mutex mutex, Runnable runnable) throws Exception {
+    static void withRunnable(Mutex mutex, Runnable runnable) {
         try {
             runnable.run();
         } finally {

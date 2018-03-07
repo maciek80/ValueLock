@@ -8,7 +8,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Assertions {
-    //TODO Consider improvements to make API more consistent and consize
+    //TODO Consider improvements to make API more consistent and concise
     public static void assertActive(TestReentrantMutex mutex, int entranceCount) {
         assertTrue(TestReentrantMutex.isActiveMutex(mutex.getLock()));
         assertTrue(mutex.isHeldByCurrentThread());

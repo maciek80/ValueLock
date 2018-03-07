@@ -4,8 +4,6 @@ import org.gusiew.lock.api.Locker;
 
 import java.util.Map;
 
-import static org.gusiew.lock.util.ConditionUtil.not;
-
 /**
  * Currently the only implementation of {@link Locker}.
  *
@@ -44,23 +42,16 @@ public class ReentrantLocker implements Locker {
 
         if (tryAcquireState) {
             synchronized (reentrantMutex) {
-                acquireLock(reentrantMutex);
+                reentrantMutex.acquireLock();
             }
         }
 
         return reentrantMutex;
     }
 
-    private void acquireLock(ReentrantMutex reentrantMutex) {
-        while (not(reentrantMutex.lockAvailable())) {
-            reentrantMutex.waitForLockAvailable();
-        }
-        reentrantMutex.acquireState();
-    }
+    void activeMutexesUpdated() {}
 
-    protected void activeMutexesUpdated() {}
-
-    protected ReentrantMutex createReentrantMutex(Object value, int entranceCount) {
+    ReentrantMutex createReentrantMutex(Object value, int entranceCount) {
         return new ReentrantMutex(value, entranceCount);
     }
 

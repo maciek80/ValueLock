@@ -110,7 +110,7 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         //given
         List<Object> sameValuesToLock = Arrays.asList(VALUE_A, VALUE_A, VALUE_A_OTHER_INSTANCE);
         List<TestReentrantMutex> mutexes = sameValuesToLock.stream()
-                                                           .map(v -> locker.lock(v))
+                                                           .map(locker::lock)
                                                            .collect(toList());
         TestReentrantMutex mutex = mutexes.get(0);
 
@@ -157,9 +157,9 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
 
 
     private static class Fixture {
-        private LockerAndValue left;
-        private LockerAndValue right;
-        private boolean expectedResult;
+        final private LockerAndValue left;
+        final private LockerAndValue right;
+        final private boolean expectedResult;
 
         Fixture(LockerAndValue left, LockerAndValue right, boolean expectedResult) {
             this.left = left;

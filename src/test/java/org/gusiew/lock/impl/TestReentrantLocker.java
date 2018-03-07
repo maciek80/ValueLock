@@ -13,7 +13,7 @@ public class TestReentrantLocker extends ReentrantLocker {
         threadSuspender = ThreadSuspender.NULL_OBJECT;
     }
 
-    TestReentrantLocker(ThreadSuspender threadSuspender, boolean suspendDuringLocking, boolean throwWhenInterrupted) {
+    private TestReentrantLocker(ThreadSuspender threadSuspender, boolean suspendDuringLocking, boolean throwWhenInterrupted) {
         super();
         this.threadSuspender = threadSuspender;
         this.suspendDuringLocking = suspendDuringLocking;

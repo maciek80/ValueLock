@@ -16,8 +16,8 @@ class MutexTest {
 
     private static final Object SAMPLE = "SAMPLE";
 
-    private Locker locker = mock(Locker.class);
-    private Mutex mutex = mock(Mutex.class);
+    final private Locker locker = mock(Locker.class);
+    final private Mutex mutex = mock(Mutex.class);
 
     private final Exception expectedException = new Exception();
     private final RuntimeException expectedRuntimeException = new RuntimeException();

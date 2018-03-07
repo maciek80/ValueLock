@@ -9,5 +9,5 @@ class AbstractReentrantLockerTest {
     static final String VALUE_B = "B";
     static final String VALUE_C = "C";
 
-    TestReentrantLocker locker = new TestReentrantLocker();
+    final TestReentrantLocker locker = new TestReentrantLocker();
 }

@@ -9,6 +9,8 @@ import static java.lang.Thread.sleep;
 
 public class ScenarioThreadDriver {
 
+    //TODO Consider fluent interface and moving the assertions in
+
     private static final int DEFAULT_DELAY_IN_MILLIS = 100;
 
     public static ThreadSuspender createSuspender() {

@@ -57,23 +57,9 @@ public class ReentrantMutex implements Mutex {
         }
     }
 
-    protected Object getLock() {
+    Object getLock() {
         return lock;
     }
-
-    boolean lockAvailable() {
-        return holderThread == null;
-    }
-
-    void waitForLockAvailable() {
-        try {
-            wait();
-        } catch (InterruptedException e) {
-            handleInterruption();
-        }
-    }
-
-    protected void handleInterruption() {}
 
     boolean tryAcquireState() {
         boolean sameThreads = sameThreads(getCurrentThread(), getHolderThread());
@@ -85,7 +71,28 @@ public class ReentrantMutex implements Mutex {
         return not(sameThreads);
     }
 
-    void acquireState() {
+    void acquireLock() {
+        while (not(lockAvailable())) {
+            waitForLockAvailable();
+        }
+        acquireState();
+    }
+
+    private boolean lockAvailable() {
+        return holderThread == null;
+    }
+
+    private void waitForLockAvailable() {
+        try {
+            wait();
+        } catch (InterruptedException e) {
+            handleInterruption();
+        }
+    }
+
+    void handleInterruption() {}
+
+    private void acquireState() {
         waitingThreadsCount--;
         entranceCount++;
         holderThread = Thread.currentThread();
@@ -118,15 +125,15 @@ public class ReentrantMutex implements Mutex {
         return ACTIVE_MUTEXES;
     }
 
-    protected boolean noWaitingThreads() {
+    boolean noWaitingThreads() {
         return waitingThreadsCount == 0;
     }
 
-    protected int getEntranceCount() {
+    int getEntranceCount() {
         return entranceCount;
     }
 
-    protected int getWaitingThreadsCount() {
+    int getWaitingThreadsCount() {
         return waitingThreadsCount;
     }
 
