@@ -29,7 +29,6 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
     @Test
     void shouldThrowWhenLockingOnNull() {
         assertThrows(NullPointerException.class, () -> locker.lock(null));
-        assertActiveMutexesEmpty();
     }
 
     //TODO Consider validating active mutexes sizes

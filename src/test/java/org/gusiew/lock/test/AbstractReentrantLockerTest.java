@@ -1,6 +1,9 @@
 package org.gusiew.lock.test;
 
 import org.gusiew.lock.impl.TestReentrantLocker;
+import org.junit.jupiter.api.AfterEach;
+
+import static org.gusiew.lock.test.util.Assertions.assertActiveMutexesEmpty;
 
 class AbstractReentrantLockerTest {
 
@@ -10,4 +13,9 @@ class AbstractReentrantLockerTest {
     static final String VALUE_C = "C";
 
     final TestReentrantLocker locker = new TestReentrantLocker();
+
+    @AfterEach
+    void checkActiveMutexesEmpty() {
+        assertActiveMutexesEmpty();
+    }
 }
