@@ -32,18 +32,14 @@ public class ReentrantLocker implements Locker {
                 reentrantMutex = createReentrantMutex(value, ONE_ENTRANCE);
                 ACTIVE_MUTEXES.put(reentrantMutex.getLock(), reentrantMutex);
             } else {
-                synchronized (reentrantMutex) {
-                    tryAcquireState = reentrantMutex.tryAcquireState();
-                }
+                tryAcquireState = reentrantMutex.synchronizeAndTryAcquireState();
             }
         }
 
         activeMutexesUpdated();
 
         if (tryAcquireState) {
-            synchronized (reentrantMutex) {
-                reentrantMutex.acquireLock();
-            }
+            reentrantMutex.synchronizeAndAcquireLock();
         }
 
         return reentrantMutex;

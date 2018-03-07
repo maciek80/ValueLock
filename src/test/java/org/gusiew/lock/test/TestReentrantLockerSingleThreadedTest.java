@@ -1,7 +1,9 @@
 package org.gusiew.lock.test;
 
+import org.gusiew.lock.impl.ReentrantMutex;
 import org.gusiew.lock.impl.TestReentrantLocker;
 import org.gusiew.lock.impl.TestReentrantMutex;
+import org.gusiew.lock.impl.exception.MutexActiveButDifferent;
 import org.gusiew.lock.impl.exception.MutexNotActiveException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -144,6 +146,19 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         assertNotActive(mutexB);
     }
 
+    @Test
+    void shouldThrowWhenTryingReleaseOnReleasedMutexAndOtherMutexForSameValueLockedInBetweenReleases() {
+        //given
+        ReentrantMutex mutexA = locker.lock(VALUE_A);
+        mutexA.release();
+        ReentrantMutex mutexB = locker.lock(VALUE_A);
+
+        //then
+        assertThrows(MutexActiveButDifferent.class, mutexA::release);
+
+        //teardown
+        mutexB.release();
+    }
 
 
     private static Fixture fixture(LockerAndValue lockerAndValue, LockerAndValue otherLockerAndValue, boolean expectedResult) {

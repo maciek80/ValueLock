@@ -1,6 +1,7 @@
 package org.gusiew.lock.impl;
 
 import org.gusiew.lock.api.Mutex;
+import org.gusiew.lock.impl.exception.MutexActiveButDifferent;
 import org.gusiew.lock.impl.exception.MutexHeldByOtherThreadException;
 import org.gusiew.lock.impl.exception.MutexNotActiveException;
 
@@ -35,24 +36,35 @@ public class ReentrantMutex implements Mutex {
      *
      * @throws MutexNotActiveException if mutex is not active (e.g. was already released)
      * @throws MutexHeldByOtherThreadException if thread tries to release mutex owned by other thread
+     * @throws MutexActiveButDifferent If mutex active but not same instance as registered in active mutexes,
+     *                                  can happen if release called on released mutex and other mutex with
+     *                                  same value created in meantime and active
      */
     @Override
     public void release() {
         synchronized (ACTIVE_MUTEXES) {
-            final ReentrantMutex reentrantMutex = ACTIVE_MUTEXES.get(lock);
-            if (reentrantMutex != null) {
-                synchronized (reentrantMutex) {
-                    if (sameThreads(Thread.currentThread(), reentrantMutex.getHolderThread())) {
-                        boolean released = reentrantMutex.tryReleasingState();
-                        if(released) {
-                            reentrantMutex.notifyLockAvailable();
-                        }
-                    } else {
-                        throw new MutexHeldByOtherThreadException();
-                    }
+            validateWith(ACTIVE_MUTEXES.get(lock));
+            synchronizeAndRelease();
+        }
+    }
+
+    private void validateWith(ReentrantMutex reentrantMutex) {
+        if(reentrantMutex == null) {
+            throw new MutexNotActiveException();
+        } else if(this != reentrantMutex) {
+            throw new MutexActiveButDifferent();
+        }
+    }
+
+    private synchronized void synchronizeAndRelease() {
+        synchronized (this) {
+            if (sameThreads(Thread.currentThread(), holderThread)) {
+                boolean released = tryReleasingState();
+                if (released) {
+                    notifyLockAvailable();
                 }
             } else {
-                throw new MutexNotActiveException();
+                throw new MutexHeldByOtherThreadException();
             }
         }
     }
@@ -61,7 +73,7 @@ public class ReentrantMutex implements Mutex {
         return lock;
     }
 
-    boolean tryAcquireState() {
+    synchronized boolean synchronizeAndTryAcquireState() {
         boolean sameThreads = sameThreads(getCurrentThread(), getHolderThread());
         if(sameThreads) {
             entranceCount++;
@@ -71,7 +83,7 @@ public class ReentrantMutex implements Mutex {
         return not(sameThreads);
     }
 
-    void acquireLock() {
+    synchronized void synchronizeAndAcquireLock() {
         while (not(lockAvailable())) {
             waitForLockAvailable();
         }
