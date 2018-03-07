@@ -14,7 +14,7 @@ public class TestReentrantMutex extends ReentrantMutex {
     }
 
     static TestReentrantMutex from(Object value, ReentrantMutex reentrantMutex, boolean throwWhenInterrupted) {
-        //FIXME - this is risky cause some of the reentrantMutex properties are ignored
+        //FIXME - this is risky cause some of the reentrantMutex properties are ignored, use reflection ?
         return new TestReentrantMutex(value, reentrantMutex.getEntranceCount(), throwWhenInterrupted);
     }
 

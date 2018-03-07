@@ -4,22 +4,25 @@ import org.gusiew.lock.impl.TestReentrantLocker;
 import org.gusiew.lock.impl.TestReentrantMutex;
 import org.gusiew.lock.impl.exception.MutexException;
 import org.gusiew.lock.impl.exception.MutexHeldByOtherThreadException;
-import org.gusiew.lock.test.util.ThreadSuspender;
+import org.gusiew.lock.test.util.ScenarioThread;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.*;
+import java.util.Arrays;
 import java.util.function.BiConsumer;
+import java.util.stream.Stream;
 
-import static java.lang.Thread.sleep;
-import static java.util.stream.Collectors.toList;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.gusiew.lock.test.util.Assertions.*;
+import static org.gusiew.lock.test.util.ScenarioThreadDriver.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
 
     private static final String THREAD_ONE = "Thread-1";
     private static final String THREAD_TWO = "Thread-2";
     private static final String THREAD_THREE = "Thread-3";
-    private static final int DEFAULT_DELAY_IN_MILLIS = 100;
     private static final int ONE_SECOND = 1000;
 
     @Test
@@ -84,25 +87,31 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         assertMutexNotActive(VALUE_A);
     }
 
-    @Test
-    void shouldWaitForLockReleaseByOtherThreadEvenWhenInterrupted() throws InterruptedException {
+    @ParameterizedTest
+    @MethodSource("valueAInstancesAndValueToCheckProvider")
+    void shouldWaitForLockReleaseByOtherThreadEvenWhenInterrupted(ValuesTriple p) {
+
+        Object firstThreadValue = p.first;
+        Object secondThreadValue = p.second;
+        Object valueToCheck = p.third;
 
         //given
-        ScenarioThread firstThread = startAndDelay(THREAD_ONE, basicScenario(VALUE_A));
-        ScenarioThread secondThread = startAndDelay(THREAD_TWO, basicScenario(VALUE_A));
+        ScenarioThread firstThread = startAndDelay(THREAD_ONE, basicScenario(firstThreadValue));
+        ScenarioThread secondThread = startAndDelay(THREAD_TWO, basicScenario(secondThreadValue));
 
         //assert
         assertThreadSuspended(firstThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
         assertThreadHanging(secondThread);
-        //assertNull(secondThread.getMutex());
+        assertThreadHoldsActiveMutex(firstThread, valueToCheck);
+        assertThreadDidNotObtainMutex(secondThread, valueToCheck);
+        assertWaitingThreads(valueToCheck, numberOfThreads(1));
 
         //then
         doInterruptAndDelay(secondThread);
 
         //assert
         assertThreadHanging(secondThread);
-        //assertNull(secondThread.getMutex());
+        assertWaitingThreads(valueToCheck, numberOfThreads(1));
 
         //then
         resumeAndDelay(firstThread);
@@ -110,35 +119,58 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadCompleted(firstThread);
         assertThreadSuspended(secondThread);
-        assertThreadHoldsActiveMutex(secondThread, VALUE_A);
+        assertThreadHoldsActiveMutex(secondThread, valueToCheck);
+        assertNoWaitingThreads(valueToCheck);
 
         //then resume second thread
         resumeAndDelay(secondThread);
 
         //assert
         assertThreadCompleted(secondThread);
-        assertMutexNotActive(VALUE_A);
+        assertMutexNotActive(valueToCheck);
     }
 
-    @Test
-    void shouldAllowMultipleThreadsContendingForSameLock() throws InterruptedException {
+    private static Stream<ValuesTriple> valueAInstancesAndValueToCheckProvider() {
+        return getAllPossibleTriples();
+    }
+
+    private static Stream<ValuesTriple> getAllPossibleTriples() {
+        return Stream.of(ValuesTriple.triple(VALUE_A, VALUE_A, VALUE_A),
+                ValuesTriple.triple(VALUE_A, VALUE_A, VALUE_A_OTHER_INSTANCE),
+                ValuesTriple.triple(VALUE_A, VALUE_A_OTHER_INSTANCE, VALUE_A),
+                ValuesTriple.triple(VALUE_A, VALUE_A_OTHER_INSTANCE, VALUE_A_OTHER_INSTANCE),
+                ValuesTriple.triple(VALUE_A_OTHER_INSTANCE, VALUE_A, VALUE_A),
+                ValuesTriple.triple(VALUE_A_OTHER_INSTANCE, VALUE_A, VALUE_A_OTHER_INSTANCE),
+                ValuesTriple.triple(VALUE_A_OTHER_INSTANCE, VALUE_A_OTHER_INSTANCE, VALUE_A),
+                ValuesTriple.triple(VALUE_A_OTHER_INSTANCE, VALUE_A_OTHER_INSTANCE, VALUE_A_OTHER_INSTANCE)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("valueAInstancesTriplesProvider")
+    void shouldAllowMultipleThreadsContendingForSameLock(ValuesTriple t) {
 
         //given
-        ScenarioThread firstThread = startAndDelay(THREAD_ONE, basicScenario(VALUE_A));
+        ScenarioThread firstThread = startAndDelay(THREAD_ONE, basicScenario(t.first));
 
         //assert
         assertThreadSuspended(firstThread);
         assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertNoWaitingThreads(VALUE_A);
 
         //then
-        ScenarioThread secondThread = startAndDelay(THREAD_TWO, basicScenario(VALUE_A));
-        ScenarioThread thirdThread = startAndDelay(THREAD_THREE, basicScenario(VALUE_A));
+        ScenarioThread secondThread = startAndDelay(THREAD_TWO, basicScenario(t.second));
+        ScenarioThread thirdThread = startAndDelay(THREAD_THREE, basicScenario(t.third));
 
         //then
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadSuspended(firstThread);
         assertThreadHanging(secondThread);
         assertThreadHanging(thirdThread);
-        //assertNull(secondThread.getMutex());
+
+        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadDidNotObtainMutex(secondThread, VALUE_A);
+        assertThreadDidNotObtainMutex(thirdThread, VALUE_A);
+        assertWaitingThreads(VALUE_A, numberOfThreads(2));
 
         //then
         resumeAndDelay(firstThread);
@@ -151,8 +183,11 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertNotNull(holdingThread);
         assertThreadSuspended(holdingThread);
-        assertThreadHanging(thirdThread);
+        assertThreadHanging(hangingThread);
+        assertWaitingThreads(VALUE_A, numberOfThreads(1));
+
         assertThreadHoldsActiveMutex(holdingThread, VALUE_A);
+        assertThreadDidNotObtainMutex(hangingThread, VALUE_A);
 
         //then
         resumeAndDelay(holdingThread);
@@ -161,6 +196,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         assertThreadCompleted(holdingThread);
         assertThreadSuspended(hangingThread);
         assertThreadHoldsActiveMutex(hangingThread, VALUE_A);
+        assertNoWaitingThreads(VALUE_A);
 
         //then
         resumeAndDelay(hangingThread);
@@ -168,6 +204,10 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadCompleted(hangingThread);
         assertMutexNotActive(VALUE_A);
+    }
+
+    private static Stream<ValuesTriple> valueAInstancesTriplesProvider() {
+        return getAllPossibleTriples();
     }
 
     @Test
@@ -473,52 +513,9 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         assertMutexNotActive(VALUE_B);
     }
 
-    private ScenarioThread assertHoldsActiveMutex(List<ScenarioThread> scenarioThreads, String value) {
-        TestReentrantMutex activeMutex = TestReentrantMutex.getFromActiveMutexes(value);
-        List<ScenarioThread> activeThreads = scenarioThreads.stream().filter(t -> t.equals(activeMutex.getHolderThread())).collect(toList());
-        assertEquals(1, activeThreads.size());
-        return activeThreads.get(0);
-    }
+    //TODO grouping consumers in single class and maybe extract ?
 
-    private void doInterruptAndDelay(ScenarioThread thread) throws InterruptedException {
-        thread.interrupt();
-        sleep(DEFAULT_DELAY_IN_MILLIS);
-    }
-
-    private void assertThreadHanging(ScenarioThread thread) {
-        assertFalse(thread.isSuspended());
-        assertTrue(thread.isAlive());
-    }
-
-    private void assertMutexNotActive(Object value) {
-        assertNull(TestReentrantMutex.getFromActiveMutexes(value));
-    }
-
-    private void assertMutexActiveButNotHeld(Object value) {
-        TestReentrantMutex activeMutex = TestReentrantMutex.getFromActiveMutexes(value);
-        assertNotNull(activeMutex);
-        assertNull(activeMutex.getHolderThread());
-    }
-
-    private void assertThreadHoldsActiveMutex(ScenarioThread thread, Object value) {
-        TestReentrantMutex threadMutex = thread.getMutex(value);
-        TestReentrantMutex activeMutex = TestReentrantMutex.getFromActiveMutexes(value);
-
-        assertSame(threadMutex, activeMutex);
-        assertNotNull(threadMutex);
-        assertEquals(thread, threadMutex.getHolderThread());
-    }
-
-    private void assertThreadCompleted(ScenarioThread thread) {
-        assertTrue(thread.completedSuccesfully());
-        assertFalse(thread.isAlive());
-    }
-
-    private void assertThreadSuspended(ScenarioThread thread) {
-        assertTrue(thread.isSuspended());
-    }
-
-    private BiConsumer<TestReentrantLocker, TestThreadMutexState> basicScenario(Object value) {
+    private BiConsumer<TestReentrantLocker, ScenarioThread.TestThreadMutexState> basicScenario(Object value) {
         return (l, ms) -> {
             TestReentrantMutex m = l.lock(value);
             ms.put(value, m);
@@ -527,7 +524,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         };
     }
 
-    private BiConsumer<TestReentrantLocker, TestThreadMutexState> twoLocksScenario(Object value1, Object value2) {
+    private BiConsumer<TestReentrantLocker, ScenarioThread.TestThreadMutexState> twoLocksScenario(Object value1, Object value2) {
         return (l, ms) -> {
             TestReentrantMutex m1 = l.lock(value1);
             ms.put(value1, m1);
@@ -541,7 +538,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         };
     }
 
-    private BiConsumer<TestReentrantLocker, TestThreadMutexState> interruptionScenario(Object value1, Object value2) {
+    private BiConsumer<TestReentrantLocker, ScenarioThread.TestThreadMutexState> interruptionScenario(Object value1, Object value2) {
         return (l, ms) -> {
             TestReentrantMutex m = l.lock(value1);
             ms.put(value1, m);
@@ -555,7 +552,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         };
     }
 
-    private BiConsumer<TestReentrantLocker, TestThreadMutexState> reacquireScenario(Object value) {
+    private BiConsumer<TestReentrantLocker, ScenarioThread.TestThreadMutexState> reacquireScenario(Object value) {
         return (l, ms) -> {
             TestReentrantMutex m1 = l.lock(value);
             ms.put(value, m1);
@@ -569,97 +566,28 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         };
     }
 
-    private BiConsumer<TestReentrantLocker, TestThreadMutexState> releaseOnlyScenario(TestReentrantMutex m) {
+    private BiConsumer<TestReentrantLocker, ScenarioThread.TestThreadMutexState> releaseOnlyScenario(TestReentrantMutex m) {
         return (l, ms) -> m.release();
     }
 
-    private void resumeAndDelay(ScenarioThread... threads) throws InterruptedException {
-        Arrays.stream(threads).forEach(ScenarioThread::resumeFromSuspension);
-        sleep(DEFAULT_DELAY_IN_MILLIS);
+    private static class ValuesTriple {
+
+        private final Object first;
+        private final Object second;
+        private final Object third;
+
+        private ValuesTriple(Object first, Object second, Object third) {
+            this.first = first;
+            this.second = second;
+            this.third = third;
+        }
+
+        static ValuesTriple triple(Object first, Object second, Object third) {
+            return new ValuesTriple(first, second, third);
+        }
     }
 
-    private void delay(long millis) throws InterruptedException {
-        sleep(millis);
-    }
-
-    private ThreadSuspender createSuspender() {
-        return new ThreadSuspender();
-    }
-
-    private ScenarioThread startAndDelay(String threadName, BiConsumer<TestReentrantLocker, TestThreadMutexState> scenario)
-            throws InterruptedException {
-
-        TestReentrantLocker lockSuspendLocker = new TestReentrantLocker.Builder().build();
-        return startAndDelay(threadName, scenario, lockSuspendLocker);
-    }
-
-    private ScenarioThread startAndDelay(String threadName, BiConsumer<TestReentrantLocker, TestThreadMutexState> scenario, TestReentrantLocker testLocker)
-            throws InterruptedException {
-        ScenarioThread thread = new ScenarioThread(threadName, testLocker, scenario);
-        thread.start();
-        sleep(DEFAULT_DELAY_IN_MILLIS);
-        return thread;
-    }
-
-    private class ScenarioThread extends Thread {
-
-        private final TestReentrantLocker threadLocker;
-        private final TestThreadMutexState threadState;
-        private final BiConsumer<TestReentrantLocker, TestThreadMutexState> scenario;
-        private volatile Exception exception;
-
-        ScenarioThread(String threadName, TestReentrantLocker threadLocker, BiConsumer<TestReentrantLocker, TestThreadMutexState> scenario) {
-            super(threadName);
-            this.threadLocker = threadLocker;
-            this.threadState = new TestThreadMutexState();
-            this.scenario = scenario;
-        }
-
-        @Override
-        public void run() {
-            try {
-                scenario.accept(threadLocker, threadState);
-            } catch (Exception e) {
-                exception = e;
-            }
-        }
-
-        boolean isSuspended() {
-            return threadLocker.isSuspended();
-        }
-
-        void resumeFromSuspension() {
-            threadLocker.resume();
-        }
-
-        boolean completedSuccesfully() {
-            return exception == null;
-        }
-
-        boolean completedWithException() {
-            return exception != null;
-        }
-
-        Exception getException() {
-            return exception;
-        }
-
-        TestReentrantMutex getMutex(Object value) {
-            return threadState.get(value);
-        }
-
-
-    }
-
-    private class TestThreadMutexState {
-        private final Map<Object, TestReentrantMutex> map = Collections.synchronizedMap(new HashMap<>());
-
-        synchronized TestReentrantMutex get(Object value) {
-            return map.get(value);
-        }
-
-        synchronized void put(Object value, TestReentrantMutex testReentrantMutex) {
-            map.put(value, testReentrantMutex);
-        }
+    private int numberOfThreads(int n) {
+        return n;
     }
 }

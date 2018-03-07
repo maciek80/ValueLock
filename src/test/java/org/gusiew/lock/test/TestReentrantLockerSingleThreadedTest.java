@@ -12,11 +12,11 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
+import static org.gusiew.lock.test.util.Assertions.assertActive;
+import static org.gusiew.lock.test.util.Assertions.assertNotActive;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest {
-
-    private static final String VALUE_A_OTHER_INSTANCE = new String(VALUE_A);
 
     private static final Long VALUE_1 = 1L;
     private static final Long VALUE_1_OTHER_INSTANCE = new Long(1L);
@@ -91,17 +91,17 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
     private static Stream<Fixture> lockerValuePairsProvider() {
         TestReentrantLocker testLocker = new TestReentrantLocker();
         TestReentrantLocker otherTestLocker = new TestReentrantLocker();
-        return Stream.of(fixture(pair(testLocker, VALUE_A), pair(testLocker, VALUE_A), true),
-                         fixture(pair(testLocker, VALUE_A), pair(testLocker, VALUE_A_OTHER_INSTANCE), true),
-                         fixture(pair(testLocker, VALUE_A), pair(otherTestLocker, VALUE_A), true),
-                         fixture(pair(testLocker, VALUE_A), pair(otherTestLocker, VALUE_A_OTHER_INSTANCE), true),
-                         fixture(pair(testLocker, VALUE_1), pair(otherTestLocker, VALUE_1), true),
-                         fixture(pair(testLocker, VALUE_1), pair(otherTestLocker, VALUE_1_OTHER_INSTANCE), true),
-                         fixture(pair(testLocker, VALUE_A), pair(testLocker, VALUE_B), false),
-                         fixture(pair(testLocker, VALUE_A), pair(otherTestLocker, VALUE_B), false),
-                         fixture(pair(testLocker, VALUE_1), pair(testLocker, VALUE_2), false),
-                         fixture(pair(testLocker, VALUE_1), pair(otherTestLocker, VALUE_2), false),
-                         fixture(pair(testLocker, VALUE_A), pair(otherTestLocker, VALUE_1), false)
+        return Stream.of(fixture(lockerAndValue(testLocker, VALUE_A), lockerAndValue(testLocker, VALUE_A), true),
+                         fixture(lockerAndValue(testLocker, VALUE_A), lockerAndValue(testLocker, VALUE_A_OTHER_INSTANCE), true),
+                         fixture(lockerAndValue(testLocker, VALUE_A), lockerAndValue(otherTestLocker, VALUE_A), true),
+                         fixture(lockerAndValue(testLocker, VALUE_A), lockerAndValue(otherTestLocker, VALUE_A_OTHER_INSTANCE), true),
+                         fixture(lockerAndValue(testLocker, VALUE_1), lockerAndValue(otherTestLocker, VALUE_1), true),
+                         fixture(lockerAndValue(testLocker, VALUE_1), lockerAndValue(otherTestLocker, VALUE_1_OTHER_INSTANCE), true),
+                         fixture(lockerAndValue(testLocker, VALUE_A), lockerAndValue(testLocker, VALUE_B), false),
+                         fixture(lockerAndValue(testLocker, VALUE_A), lockerAndValue(otherTestLocker, VALUE_B), false),
+                         fixture(lockerAndValue(testLocker, VALUE_1), lockerAndValue(testLocker, VALUE_2), false),
+                         fixture(lockerAndValue(testLocker, VALUE_1), lockerAndValue(otherTestLocker, VALUE_2), false),
+                         fixture(lockerAndValue(testLocker, VALUE_A), lockerAndValue(otherTestLocker, VALUE_1), false)
         );
     }
 
@@ -151,24 +151,10 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
     }
 
 
-    private static LockerAndValue pair(TestReentrantLocker locker, Object value) {
+    private static LockerAndValue lockerAndValue(TestReentrantLocker locker, Object value) {
         return new LockerAndValue(locker, value);
     }
 
-    //TODO could refactor to base class
-    private void assertActive(TestReentrantMutex mutex, int entranceCount) {
-        assertTrue(TestReentrantMutex.isActiveMutex(mutex.getLock()));
-        assertTrue(mutex.isHeldByCurrentThread());
-        assertEquals(entranceCount, mutex.getEntranceCount());
-    }
-
-    private void assertNotActive(TestReentrantMutex mutex) {
-        assertFalse(TestReentrantMutex.isActiveMutex(mutex.getLock()));
-        assertFalse(mutex.isHeld());
-        assertTrue(mutex.noEntrances());
-        //TODO remove but add to concurrent tests
-        assertTrue(mutex.noWaitingThreads());
-    }
 
     private static class Fixture {
         private LockerAndValue left;
