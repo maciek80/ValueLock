@@ -24,6 +24,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
     private static final String THREAD_TWO = "Thread-2";
     private static final String THREAD_THREE = "Thread-3";
     private static final int ONE_SECOND = 1000;
+    private static final int MINIMAL_DELAY = 10;
 
     @Test
     void noLockingForNonCompetingThreads() throws InterruptedException {
@@ -89,7 +90,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
 
     @ParameterizedTest
     @MethodSource("valueAInstancesAndValueToCheckProvider")
-    void shouldWaitForLockReleaseByOtherThreadEvenWhenInterrupted(ValuesTriple p) {
+    void shouldWaitForLockReleaseByOtherThread(ValuesTriple p) {
 
         Object firstThreadValue = p.first;
         Object secondThreadValue = p.second;
@@ -107,13 +108,6 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         assertWaitingThreads(valueToCheck, numberOfThreads(1));
 
         //then
-        doInterruptAndDelay(secondThread);
-
-        //assert
-        assertThreadHanging(secondThread);
-        assertWaitingThreads(valueToCheck, numberOfThreads(1));
-
-        //then
         resumeAndDelay(firstThread);
 
         //assert
@@ -128,6 +122,43 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadCompleted(secondThread);
         assertMutexNotActive(valueToCheck);
+    }
+
+    @Test
+    void shouldPropagateInterruption() {
+        //given
+        ScenarioThread firstThread = startAndDelay(THREAD_ONE, basicScenario(VALUE_A));
+        ScenarioThread secondThread = startAndDelay(THREAD_TWO, acquireInterruptionScenario(VALUE_A));
+
+        //assert
+        assertThreadSuspended(firstThread);
+        assertThreadHanging(secondThread);
+        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadDidNotObtainMutex(secondThread, VALUE_A);
+        assertWaitingThreads(VALUE_A, numberOfThreads(1));
+
+        //then
+        doInterruptAndDelay(secondThread);
+
+        //assert
+        assertThreadHanging(secondThread);
+        assertWaitingThreads(VALUE_A, numberOfThreads(1));
+
+        //then
+        resumeAndDelay(firstThread);
+
+        //assert
+        assertThreadCompleted(firstThread);
+        assertThreadSuspended(secondThread);
+        assertThreadHoldsActiveMutex(secondThread, VALUE_A);
+        assertNoWaitingThreads(VALUE_A);
+
+        //then resume second thread
+        resumeAndDelay(secondThread);
+
+        //assert
+        assertThreadCompleted(secondThread);
+        assertMutexNotActive(VALUE_A);
     }
 
     private static Stream<ValuesTriple> valueAInstancesAndValueToCheckProvider() {
@@ -448,7 +479,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
                 .build();
 
         //given
-        ScenarioThread firstThread = startAndDelay(THREAD_ONE, interruptionScenario(VALUE_A, VALUE_B));
+        ScenarioThread firstThread = startAndDelay(THREAD_ONE, deadlockInterruptionScenario(VALUE_A, VALUE_B));
 
         //assert
         assertThreadSuspended(firstThread);
@@ -524,6 +555,19 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         };
     }
 
+    private BiConsumer<TestReentrantLocker, ScenarioThread.TestThreadMutexState> acquireInterruptionScenario(Object value) {
+        return (l, ms) -> {
+            TestReentrantMutex m = l.lock(value);
+            ms.put(value, m);
+            try {
+                Thread.sleep(MINIMAL_DELAY);
+            } catch (InterruptedException e) {
+                l.suspend();
+            }
+            m.release();
+        };
+    }
+
     private BiConsumer<TestReentrantLocker, ScenarioThread.TestThreadMutexState> twoLocksScenario(Object value1, Object value2) {
         return (l, ms) -> {
             TestReentrantMutex m1 = l.lock(value1);
@@ -538,7 +582,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         };
     }
 
-    private BiConsumer<TestReentrantLocker, ScenarioThread.TestThreadMutexState> interruptionScenario(Object value1, Object value2) {
+    private BiConsumer<TestReentrantLocker, ScenarioThread.TestThreadMutexState> deadlockInterruptionScenario(Object value1, Object value2) {
         return (l, ms) -> {
             TestReentrantMutex m = l.lock(value1);
             ms.put(value1, m);

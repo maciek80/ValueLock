@@ -83,26 +83,31 @@ public class ReentrantMutex implements Mutex {
         return not(sameThreads);
     }
 
-    synchronized void synchronizeAndAcquireLock() {
+    synchronized boolean synchronizeAndAcquireLock() {
+        boolean wasInterrupted = false;
         while (not(lockAvailable())) {
-            waitForLockAvailable();
+            wasInterrupted |= waitForLockAvailable();
         }
         acquireState();
+        return wasInterrupted;
     }
 
     private boolean lockAvailable() {
         return holderThread == null;
     }
 
-    private void waitForLockAvailable() {
+    private boolean waitForLockAvailable() {
         try {
             wait();
         } catch (InterruptedException e) {
-            handleInterruption();
+            return handleInterruption();
         }
+        return false;
     }
 
-    void handleInterruption() {}
+    boolean handleInterruption() {
+        return true;
+    }
 
     private void acquireState() {
         waitingThreadsCount--;

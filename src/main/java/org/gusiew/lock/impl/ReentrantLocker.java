@@ -25,6 +25,7 @@ public class ReentrantLocker implements Locker {
     public ReentrantMutex lock(final Object value) {
         ReentrantMutex reentrantMutex;
         boolean tryAcquireState = false;
+        boolean wasInterrupted = false;
 
         validate(value);
 
@@ -41,8 +42,9 @@ public class ReentrantLocker implements Locker {
         activeMutexesUpdated();
 
         if (tryAcquireState) {
-            reentrantMutex.synchronizeAndAcquireLock();
+            wasInterrupted = reentrantMutex.synchronizeAndAcquireLock();
         }
+        setInterruptionOnThreadIfNeeded(wasInterrupted);
 
         return reentrantMutex;
     }
@@ -53,10 +55,15 @@ public class ReentrantLocker implements Locker {
         }
     }
 
-    void activeMutexesUpdated() {}
-
     ReentrantMutex createAndLock(Object value) {
         return new ReentrantMutex(value, ONE_ENTRANCE);
     }
 
+    void activeMutexesUpdated() {}
+
+    private void setInterruptionOnThreadIfNeeded(boolean wasInterrupted) {
+        if(wasInterrupted) {
+            Thread.currentThread().interrupt();
+        }
+    }
 }

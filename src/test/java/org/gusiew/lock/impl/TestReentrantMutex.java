@@ -64,11 +64,12 @@ public class TestReentrantMutex extends ReentrantMutex {
     }
 
     @Override
-    protected void handleInterruption() {
+    protected boolean handleInterruption() {
         if(throwWhenInterrupted) {
             decreaseWaitingThreadsCount();
             throw new MutexException();
         }
+        return super.handleInterruption();
     }
 
     public static boolean activeMutexesEmpty() {
