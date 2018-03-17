@@ -60,7 +60,6 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         assertActiveMutexesEmpty();
         //then
         assertThrows(MutexNotActiveException.class, mutex::release);
-        assertActiveMutexesEmpty();
     }
 
     @Test
