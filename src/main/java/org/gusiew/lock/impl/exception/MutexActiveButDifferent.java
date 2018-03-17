@@ -5,5 +5,5 @@ import org.gusiew.lock.impl.ReentrantMutex;
 /**
  * @see ReentrantMutex#release().
  */
-public class MutexActiveButDifferent extends RuntimeException {
+public class MutexActiveButDifferent extends MutexException {
 }
