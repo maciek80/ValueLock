@@ -31,7 +31,7 @@ public class ReentrantLocker implements Locker {
         synchronized (ACTIVE_MUTEXES) {
             reentrantMutex = ACTIVE_MUTEXES.get(value);
             if (reentrantMutex == null) {
-                reentrantMutex = createReentrantMutex(value, ONE_ENTRANCE);
+                reentrantMutex = createAndLock(value);
                 ACTIVE_MUTEXES.put(reentrantMutex.getLock(), reentrantMutex);
             } else {
                 tryAcquireState = reentrantMutex.synchronizeAndTryAcquireState();
@@ -55,8 +55,8 @@ public class ReentrantLocker implements Locker {
 
     void activeMutexesUpdated() {}
 
-    ReentrantMutex createReentrantMutex(Object value, int entranceCount) {
-        return new ReentrantMutex(value, entranceCount);
+    ReentrantMutex createAndLock(Object value) {
+        return new ReentrantMutex(value, ONE_ENTRANCE);
     }
 
 }

@@ -26,8 +26,8 @@ public class TestReentrantLocker extends ReentrantLocker {
     }
 
     @Override
-    protected TestReentrantMutex createReentrantMutex(Object value, int entranceCount) {
-        ReentrantMutex reentrantMutex = super.createReentrantMutex(value, entranceCount);
+    protected TestReentrantMutex createAndLock(Object value) {
+        ReentrantMutex reentrantMutex = super.createAndLock(value);
         return TestReentrantMutex.from(value, reentrantMutex, throwWhenInterrupted);
         //new TestReentrantMutex(value, entranceCount, throwWhenInterrupted);
     }
