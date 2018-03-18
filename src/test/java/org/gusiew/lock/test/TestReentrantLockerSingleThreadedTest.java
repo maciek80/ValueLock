@@ -5,9 +5,11 @@ import org.gusiew.lock.impl.TestReentrantLocker;
 import org.gusiew.lock.impl.TestReentrantMutex;
 import org.gusiew.lock.impl.exception.MutexActiveButDifferent;
 import org.gusiew.lock.impl.exception.MutexNotActiveException;
+import org.gusiew.lock.util.StripedMap;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Arrays;
 import java.util.List;
@@ -24,6 +26,7 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
     private static final Long VALUE_1_OTHER_INSTANCE = new Long(1L);
     private static final Long VALUE_2 = 2L;
     private static final int ZERO_ENTRIES = 0;
+    private static final int DEFAULT_CONCURRENCY_LEVEL = 16;
 
     @Test
     void shouldThrowWhenLockingOnNull() {
@@ -38,7 +41,7 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         TestReentrantMutex mutex = locker.lock(VALUE_A);
         //then
         assertEquals(VALUE_A, mutex.getLock());
-        assertActiveAndHeldByCurrentThread(mutex);
+        assertActiveAndHeldByCurrentThread(locker, mutex);
         //teardown
         mutex.release();
     }
@@ -49,15 +52,15 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         TestReentrantMutex mutex = locker.lock(VALUE_A);
         mutex.release();
         //then
-        assertNotActive(mutex);
+        assertNotActive(locker, mutex);
     }
 
     //FIXME simplify this test
     @Test
     void shouldThrowOnReleaseWithoutLocking() {
         //given
-        TestReentrantMutex mutex = new TestReentrantMutex(VALUE_A, ZERO_ENTRIES);
-        assertActiveMutexesEmpty();
+        TestReentrantMutex mutex = new TestReentrantMutex(VALUE_A, ZERO_ENTRIES, new StripedMap<>(1));
+        assertActiveMutexesEmpty(locker);
         //then
         assertThrows(MutexNotActiveException.class, mutex::release);
     }
@@ -74,17 +77,12 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
     @ParameterizedTest
     @MethodSource("lockerValuePairsProvider")
     void shouldReturnSameMutexOnlyForSameValues(Fixture fixture) {
-        //given
-        TestReentrantLocker testLocker = fixture.left.locker;
-        TestReentrantLocker otherTestLocker = fixture.right.locker;
-        Object testValue = fixture.left.value;
-        Object otherTestValue = fixture.right.value;
         //when
-        TestReentrantMutex reentrantMutex = testLocker.lock(testValue);
-        TestReentrantMutex otherReentrantMutex = otherTestLocker.lock(otherTestValue);
+        TestReentrantMutex reentrantMutex = locker.lock(fixture.value1);
+        TestReentrantMutex otherReentrantMutex = locker.lock(fixture.value2);
         //then
-        assertActiveAndHeldByCurrentThread(reentrantMutex);
-        assertActiveAndHeldByCurrentThread(otherReentrantMutex);
+        assertActiveAndHeldByCurrentThread(locker, reentrantMutex);
+        assertActiveAndHeldByCurrentThread(locker, otherReentrantMutex);
         assertEquals(fixture.expectedResult, reentrantMutex == otherReentrantMutex);
 
         //teardown
@@ -93,19 +91,15 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
     }
 
     private static Stream<Fixture> lockerValuePairsProvider() {
-        TestReentrantLocker testLocker = new TestReentrantLocker();
-        TestReentrantLocker otherTestLocker = new TestReentrantLocker();
-        return Stream.of(fixture(lockerAndValue(testLocker, VALUE_A), lockerAndValue(testLocker, VALUE_A), true),
-                         fixture(lockerAndValue(testLocker, VALUE_A), lockerAndValue(testLocker, VALUE_A_OTHER_INSTANCE), true),
-                         fixture(lockerAndValue(testLocker, VALUE_A), lockerAndValue(otherTestLocker, VALUE_A), true),
-                         fixture(lockerAndValue(testLocker, VALUE_A), lockerAndValue(otherTestLocker, VALUE_A_OTHER_INSTANCE), true),
-                         fixture(lockerAndValue(testLocker, VALUE_1), lockerAndValue(otherTestLocker, VALUE_1), true),
-                         fixture(lockerAndValue(testLocker, VALUE_1), lockerAndValue(otherTestLocker, VALUE_1_OTHER_INSTANCE), true),
-                         fixture(lockerAndValue(testLocker, VALUE_A), lockerAndValue(testLocker, VALUE_B), false),
-                         fixture(lockerAndValue(testLocker, VALUE_A), lockerAndValue(otherTestLocker, VALUE_B), false),
-                         fixture(lockerAndValue(testLocker, VALUE_1), lockerAndValue(testLocker, VALUE_2), false),
-                         fixture(lockerAndValue(testLocker, VALUE_1), lockerAndValue(otherTestLocker, VALUE_2), false),
-                         fixture(lockerAndValue(testLocker, VALUE_A), lockerAndValue(otherTestLocker, VALUE_1), false)
+        return Stream.of(fixture( VALUE_A,  VALUE_A, true),
+                         fixture( VALUE_A,  VALUE_A_OTHER_INSTANCE, true),
+                         fixture( VALUE_1,  VALUE_1, true),
+                         fixture( VALUE_1,  VALUE_1_OTHER_INSTANCE, true),
+                         fixture( VALUE_A,  VALUE_B, false),
+                         fixture( VALUE_A,  VALUE_B, false),
+                         fixture( VALUE_1,  VALUE_2, false),
+                         fixture( VALUE_1,  VALUE_2, false),
+                         fixture( VALUE_A,  VALUE_1, false)
         );
     }
 
@@ -121,19 +115,19 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         int entrances = sameValuesToLock.size();
 
         //then
-        assertActiveAndHeldByCurrentThreadWithEntrances(mutex, entrances);
+        assertActiveAndHeldByCurrentThreadWithEntrances(locker, mutex, entrances);
 
         //then
         mutex.release();
-        assertActiveAndHeldByCurrentThreadWithEntrances(mutex, --entrances);
+        assertActiveAndHeldByCurrentThreadWithEntrances(locker, mutex, --entrances);
 
         //then
         mutex.release();
-        assertActiveAndHeldByCurrentThreadWithEntrances(mutex, --entrances);
+        assertActiveAndHeldByCurrentThreadWithEntrances(locker, mutex, --entrances);
 
         //then
         mutex.release();
-        assertNotActive(mutex);
+        assertNotActive(locker, mutex);
     }
 
     @Test
@@ -144,8 +138,8 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         mutexB.release();
         mutexA.release();
         //then
-        assertNotActive(mutexA);
-        assertNotActive(mutexB);
+        assertNotActive(locker, mutexA);
+        assertNotActive(locker, mutexB);
     }
 
     @Test
@@ -162,43 +156,31 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         mutexB.release();
     }
 
-    private static Fixture fixture(LockerAndValue lockerAndValue, LockerAndValue otherLockerAndValue, boolean expectedResult) {
-        return new Fixture(lockerAndValue, otherLockerAndValue, expectedResult);
+    @Test
+    void shouldApplyDefaultConcurrencyLevel() {
+        assertEquals(DEFAULT_CONCURRENCY_LEVEL, locker.getConcurrencyLevel());
     }
 
-
-    private static LockerAndValue lockerAndValue(TestReentrantLocker locker, Object value) {
-        return new LockerAndValue(locker, value);
+    @ParameterizedTest
+    @ValueSource(ints = {1, 2, 3, 4})
+    void shouldApplyCorrectConcurrencyLevel(int level) {
+        assertEquals(level, new TestReentrantLocker(level).getConcurrencyLevel());
     }
 
+    private static Fixture fixture(Object value1, Object value2, boolean expectedResult) {
+        return new Fixture(value1, value2, expectedResult);
+    }
 
     private static class Fixture {
-        final private LockerAndValue left;
-        final private LockerAndValue right;
+        final private Object value1;
+        final private Object value2;
         final private boolean expectedResult;
 
-        Fixture(LockerAndValue left, LockerAndValue right, boolean expectedResult) {
-            this.left = left;
-            this.right = right;
+        Fixture(Object value1, Object value2, boolean expectedResult) {
+            this.value1 = value1;
+            this.value2 = value2;
             this.expectedResult = expectedResult;
         }
     }
-
-    private static class LockerAndValue {
-        private final TestReentrantLocker locker;
-        private final Object value;
-
-        LockerAndValue(TestReentrantLocker locker, Object value) {
-            this.locker = locker;
-            this.value = value;
-        }
-
-        @Override
-        public String toString() {
-            return "LockerAndValue{" +
-                    "locker=" + locker +
-                    ", value=" + value +
-                    '}';
-        }
-    }
+    
 }

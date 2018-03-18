@@ -4,6 +4,7 @@ import org.gusiew.lock.api.Mutex;
 import org.gusiew.lock.impl.exception.MutexActiveButDifferent;
 import org.gusiew.lock.impl.exception.MutexHeldByOtherThreadException;
 import org.gusiew.lock.impl.exception.MutexNotActiveException;
+import org.gusiew.lock.util.StripedMap;
 
 import static org.gusiew.lock.util.ConditionUtil.not;
 import static org.gusiew.lock.util.ThreadUtil.sameThreads;
@@ -15,16 +16,18 @@ import static org.gusiew.lock.util.ThreadUtil.sameThreads;
 public class ReentrantMutex implements Mutex {
 
     private final Object lock;
+    final StripedMap<Object, ReentrantMutex> locks;
     //TODO Is volatile really needed
     private volatile Thread holderThread;
     private volatile int entranceCount;
     private volatile int waitingThreadsCount;
 
-    ReentrantMutex(final Object value, int entranceCount) {
+    ReentrantMutex(final Object value, int entranceCount, StripedMap<Object, ReentrantMutex> locks) {
         //TODO Assume value immutability for now
         this.lock = value;
         this.holderThread = getCurrentThread();
         this.entranceCount = entranceCount;
+        this.locks = locks;
     }
 
     /**
@@ -38,8 +41,8 @@ public class ReentrantMutex implements Mutex {
      */
     @Override
     public void release() {
-        synchronized (ReentrantLocker.LOCKS.getStripe(lock)) {
-            validateWith(ReentrantLocker.LOCKS.get(lock));
+        synchronized (locks.getStripe(lock)) {
+            validateWith(locks.get(lock));
             synchronizeAndRelease();
         }
     }
@@ -117,7 +120,7 @@ public class ReentrantMutex implements Mutex {
         if(entranceCount == 0) {
             holderThread = null;
             if(waitingThreadsCount == 0) {
-                ReentrantLocker.LOCKS.remove(lock);
+                locks.remove(lock);
             } else {
                 canNotify = true;
             }

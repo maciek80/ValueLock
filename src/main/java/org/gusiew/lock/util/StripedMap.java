@@ -45,6 +45,10 @@ public class StripedMap<K, V> {
         return key.hashCode() % mapsByStripe.size();
     }
 
+    public int getNumberOfStripes() {
+        return mapsByStripe.size();
+    }
+
     private static class StripeMapPair<K, V> {
 
         final Integer stripeIndex;

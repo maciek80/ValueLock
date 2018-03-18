@@ -39,9 +39,9 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         assertThreadSuspended(secondThread);
         assertThreadSuspended(thirdThread);
 
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
-        assertThreadHoldsActiveMutex(secondThread, VALUE_B);
-        assertThreadHoldsActiveMutex(thirdThread, VALUE_C);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, secondThread, VALUE_B);
+        assertThreadHoldsActiveMutex(locker, thirdThread, VALUE_C);
 
         //then
         resumeAndDelay(firstThread, secondThread, thirdThread);
@@ -51,9 +51,9 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         assertThreadCompleted(secondThread);
         assertThreadCompleted(thirdThread);
 
-        assertMutexNotActive(VALUE_A);
-        assertMutexNotActive(VALUE_B);
-        assertMutexNotActive(VALUE_C);
+        assertMutexNotActive(locker, VALUE_A);
+        assertMutexNotActive(locker, VALUE_B);
+        assertMutexNotActive(locker, VALUE_C);
     }
 
     @Test
@@ -62,14 +62,14 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         ScenarioThread firstThread = startAndDelay(THREAD_ONE, basicScenario(VALUE_A));
 
         assertThreadSuspended(firstThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
 
         ScenarioThread secondThread = startAndDelay(THREAD_TWO, basicScenario(VALUE_B));
 
         assertThreadSuspended(firstThread);
         assertThreadSuspended(secondThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
-        assertThreadHoldsActiveMutex(secondThread, VALUE_B);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, secondThread, VALUE_B);
 
         //then
         resumeAndDelay(secondThread);
@@ -77,8 +77,8 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadSuspended(firstThread);
         assertThreadCompleted(secondThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
-        assertMutexNotActive(VALUE_B);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
+        assertMutexNotActive(locker, VALUE_B);
 
 
         //then
@@ -86,7 +86,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
 
         //assert
         assertThreadCompleted(firstThread);
-        assertMutexNotActive(VALUE_A);
+        assertMutexNotActive(locker, VALUE_A);
     }
 
     @ParameterizedTest
@@ -104,9 +104,9 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadSuspended(firstThread);
         assertThreadHanging(secondThread);
-        assertThreadHoldsActiveMutex(firstThread, valueToCheck);
+        assertThreadHoldsActiveMutex(locker, firstThread, valueToCheck);
         assertThreadDidNotObtainMutex(secondThread, valueToCheck);
-        assertWaitingThreads(valueToCheck, numberOfThreads(1));
+        assertWaitingThreads(locker, valueToCheck, numberOfThreads(1));
 
         //then
         resumeAndDelay(firstThread);
@@ -114,15 +114,15 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadCompleted(firstThread);
         assertThreadSuspended(secondThread);
-        assertThreadHoldsActiveMutex(secondThread, valueToCheck);
-        assertNoWaitingThreads(valueToCheck);
+        assertThreadHoldsActiveMutex(locker, secondThread, valueToCheck);
+        assertNoWaitingThreads(locker, valueToCheck);
 
         //then resume second thread
         resumeAndDelay(secondThread);
 
         //assert
         assertThreadCompleted(secondThread);
-        assertMutexNotActive(valueToCheck);
+        assertMutexNotActive(locker, valueToCheck);
     }
 
     private static Stream<ValuesTriple> valueAInstancesAndValueToCheckProvider() {
@@ -151,16 +151,16 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadSuspended(firstThread);
         assertThreadHanging(secondThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
         assertThreadDidNotObtainMutex(secondThread, VALUE_A);
-        assertWaitingThreads(VALUE_A, numberOfThreads(1));
+        assertWaitingThreads(locker, VALUE_A, numberOfThreads(1));
 
         //then
         doInterruptAndDelay(secondThread);
 
         //assert
         assertThreadHanging(secondThread);
-        assertWaitingThreads(VALUE_A, numberOfThreads(1));
+        assertWaitingThreads(locker, VALUE_A, numberOfThreads(1));
 
         //then
         resumeAndDelay(firstThread);
@@ -168,15 +168,15 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadCompleted(firstThread);
         assertThreadSuspended(secondThread);
-        assertThreadHoldsActiveMutex(secondThread, VALUE_A);
-        assertNoWaitingThreads(VALUE_A);
+        assertThreadHoldsActiveMutex(locker, secondThread, VALUE_A);
+        assertNoWaitingThreads(locker, VALUE_A);
 
         //then resume second thread
         resumeAndDelay(secondThread);
 
         //assert
         assertThreadCompleted(secondThread);
-        assertMutexNotActive(VALUE_A);
+        assertMutexNotActive(locker, VALUE_A);
     }
 
     @ParameterizedTest
@@ -188,8 +188,8 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
 
         //assert
         assertThreadSuspended(firstThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
-        assertNoWaitingThreads(VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
+        assertNoWaitingThreads(locker, VALUE_A);
 
         //then
         ScenarioThread secondThread = startAndDelay(THREAD_TWO, basicScenario(t.second));
@@ -200,26 +200,26 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         assertThreadHanging(secondThread);
         assertThreadHanging(thirdThread);
 
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
         assertThreadDidNotObtainMutex(secondThread, VALUE_A);
         assertThreadDidNotObtainMutex(thirdThread, VALUE_A);
-        assertWaitingThreads(VALUE_A, numberOfThreads(2));
+        assertWaitingThreads(locker, VALUE_A, numberOfThreads(2));
 
         //then
         resumeAndDelay(firstThread);
 
         //assert
         assertThreadCompleted(firstThread);
-        ScenarioThread holdingThread = assertHoldsActiveMutex(Arrays.asList(secondThread, thirdThread), VALUE_A);
+        ScenarioThread holdingThread = assertHoldsActiveMutex(locker, Arrays.asList(secondThread, thirdThread), VALUE_A);
         ScenarioThread hangingThread = holdingThread.equals(secondThread) ? thirdThread : secondThread;
 
         //assert
         assertNotNull(holdingThread);
         assertThreadSuspended(holdingThread);
         assertThreadHanging(hangingThread);
-        assertWaitingThreads(VALUE_A, numberOfThreads(1));
+        assertWaitingThreads(locker, VALUE_A, numberOfThreads(1));
 
-        assertThreadHoldsActiveMutex(holdingThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, holdingThread, VALUE_A);
         assertThreadDidNotObtainMutex(hangingThread, VALUE_A);
 
         //then
@@ -228,15 +228,15 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadCompleted(holdingThread);
         assertThreadSuspended(hangingThread);
-        assertThreadHoldsActiveMutex(hangingThread, VALUE_A);
-        assertNoWaitingThreads(VALUE_A);
+        assertThreadHoldsActiveMutex(locker, hangingThread, VALUE_A);
+        assertNoWaitingThreads(locker, VALUE_A);
 
         //then
         resumeAndDelay(hangingThread);
 
         //assert
         assertThreadCompleted(hangingThread);
-        assertMutexNotActive(VALUE_A);
+        assertMutexNotActive(locker, VALUE_A);
     }
 
     private static Stream<ValuesTriple> valueAInstancesTriplesProvider() {
@@ -251,15 +251,15 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
 
         //assert
         assertThreadSuspended(firstThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
 
         ScenarioThread secondThread = startAndDelay(THREAD_TWO, basicScenario(VALUE_B));
 
         //assert
         assertThreadSuspended(firstThread);
         assertThreadSuspended(secondThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
-        assertThreadHoldsActiveMutex(secondThread, VALUE_B);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, secondThread, VALUE_B);
 
         //then
         resumeAndDelay(firstThread);
@@ -267,8 +267,8 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadHanging(firstThread);
         assertThreadSuspended(secondThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
-        assertThreadHoldsActiveMutex(secondThread, VALUE_B);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, secondThread, VALUE_B);
 
         //then
         resumeAndDelay(secondThread);
@@ -276,24 +276,24 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadSuspended(firstThread);
         assertThreadCompleted(secondThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_B);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_B);
 
         //then
         resumeAndDelay(firstThread);
 
         //assert
         assertThreadSuspended(firstThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_B);
-        assertMutexNotActive(VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_B);
+        assertMutexNotActive(locker, VALUE_A);
 
         //then
         resumeAndDelay(firstThread);
 
         //assert
         assertThreadCompleted(firstThread);
-        assertMutexNotActive(VALUE_A);
-        assertMutexNotActive(VALUE_B);
+        assertMutexNotActive(locker, VALUE_A);
+        assertMutexNotActive(locker, VALUE_B);
     }
 
     @Test
@@ -304,14 +304,14 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
 
         //assert
         assertThreadSuspended(firstThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
 
         ScenarioThread secondThread = startAndDelay(THREAD_TWO, basicScenario(VALUE_A));
 
         //assert
         assertThreadSuspended(firstThread);
         assertThreadHanging(secondThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
 
         //then
         resumeAndDelay(firstThread);
@@ -319,7 +319,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert acquire second time
         assertThreadSuspended(firstThread);
         assertThreadHanging(secondThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
 
         //then
         resumeAndDelay(firstThread);
@@ -327,7 +327,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert first release
         assertThreadSuspended(firstThread);
         assertThreadHanging(secondThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
 
         //then second release
         resumeAndDelay(firstThread);
@@ -335,14 +335,14 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadCompleted(firstThread);
         assertThreadSuspended(secondThread);
-        assertThreadHoldsActiveMutex(secondThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, secondThread, VALUE_A);
 
         //then
         resumeAndDelay(secondThread);
 
         //assert
         assertThreadCompleted(secondThread);
-        assertMutexNotActive(VALUE_A);
+        assertMutexNotActive(locker, VALUE_A);
     }
 
     @Test
@@ -353,7 +353,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
 
         //assert
         assertThreadSuspended(firstThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
 
         //then
         TestReentrantMutex m = firstThread.getMutex(VALUE_A);
@@ -368,7 +368,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
 
         //assert
         assertThreadCompleted(firstThread);
-        assertMutexNotActive(VALUE_A);
+        assertMutexNotActive(locker, VALUE_A);
     }
 
     @Test
@@ -378,7 +378,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
 
         //assert
         assertThreadSuspended(firstThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
 
         //then
         ScenarioThread secondThread = startAndDelay(THREAD_ONE, basicScenario(VALUE_A), builder().withSuspendDuringLocking(true).build());
@@ -386,25 +386,25 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadSuspended(firstThread);
         assertThreadSuspended(secondThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
 
         //then
         resumeAndDelay(firstThread);
         //assert
         assertThreadCompleted(firstThread);
         assertThreadSuspended(secondThread);
-        assertMutexActiveButNotHeld(VALUE_A);
+        assertMutexActiveButNotHeld(locker, VALUE_A);
         //then
         resumeAndDelay(secondThread);
         //assert
         assertThreadSuspended(secondThread);
-        assertThreadHoldsActiveMutex(secondThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, secondThread, VALUE_A);
         //then
         resumeAndDelay(secondThread);
 
         //assert
         assertThreadCompleted(firstThread);
-        assertMutexNotActive(VALUE_A);
+        assertMutexNotActive(locker, VALUE_A);
 
     }
 
@@ -416,7 +416,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
 
         //assert
         assertThreadSuspended(firstThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
 
         //then
         ScenarioThread secondThread = startAndDelay(THREAD_ONE, basicScenario(VALUE_A), builder().withSuspendDuringLocking(true).build());
@@ -424,7 +424,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadSuspended(firstThread);
         assertThreadSuspended(secondThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
 
         //then
         resumeAndDelay(firstThread);
@@ -432,7 +432,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadSuspended(firstThread);
         assertThreadSuspended(secondThread);
-        assertMutexActiveButNotHeld(VALUE_A);
+        assertMutexActiveButNotHeld(locker, VALUE_A);
 
         //then
         resumeAndDelay(firstThread);
@@ -440,7 +440,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadSuspended(firstThread);
         assertThreadSuspended(secondThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
 
         //then
         resumeAndDelay(firstThread);
@@ -448,21 +448,21 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadCompleted(firstThread);
         assertThreadSuspended(secondThread);
-        assertMutexActiveButNotHeld(VALUE_A);
+        assertMutexActiveButNotHeld(locker, VALUE_A);
 
         //then
         resumeAndDelay(secondThread);
 
         //assert
         assertThreadSuspended(secondThread);
-        assertThreadHoldsActiveMutex(secondThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, secondThread, VALUE_A);
 
         //then
         resumeAndDelay(secondThread);
 
         //assert
         assertThreadCompleted(secondThread);
-        assertMutexNotActive(VALUE_A);
+        assertMutexNotActive(locker, VALUE_A);
     }
 
     @Test
@@ -473,7 +473,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
 
         //assert
         assertThreadSuspended(firstThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
 
         //then
         ScenarioThread secondThread = startAndDelay(THREAD_TWO, twoLocksScenario(VALUE_B, VALUE_A));
@@ -481,16 +481,16 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadSuspended(firstThread);
         assertThreadSuspended(secondThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
-        assertThreadHoldsActiveMutex(secondThread, VALUE_B);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, secondThread, VALUE_B);
 
         //then
         resumeAndDelay(firstThread, secondThread);
 
         assertThreadHanging(firstThread);
         assertThreadHanging(secondThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
-        assertThreadHoldsActiveMutex(secondThread, VALUE_B);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, secondThread, VALUE_B);
 
         //then
         delay(ONE_SECOND);
@@ -498,8 +498,8 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadHanging(firstThread);
         assertThreadHanging(secondThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
-        assertThreadHoldsActiveMutex(secondThread, VALUE_B);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, secondThread, VALUE_B);
 
         //then
         doInterruptAndDelay(firstThread);
@@ -507,8 +507,8 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadSuspended(firstThread);
         assertThreadHanging(secondThread);
-        assertThreadHoldsActiveMutex(firstThread, VALUE_A);
-        assertThreadHoldsActiveMutex(secondThread, VALUE_B);
+        assertThreadHoldsActiveMutex(locker, firstThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, secondThread, VALUE_B);
 
         //then
         resumeAndDelay(firstThread);
@@ -516,22 +516,22 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadCompleted(firstThread);
         assertThreadSuspended(secondThread);
-        assertThreadHoldsActiveMutex(secondThread, VALUE_A);
-        assertThreadHoldsActiveMutex(secondThread, VALUE_B);
+        assertThreadHoldsActiveMutex(locker, secondThread, VALUE_A);
+        assertThreadHoldsActiveMutex(locker, secondThread, VALUE_B);
 
         //then
         resumeAndDelay(secondThread);
 
         //assert
         assertThreadSuspended(secondThread);
-        assertThreadHoldsActiveMutex(secondThread, VALUE_A);
-        assertMutexNotActive(VALUE_B);
+        assertThreadHoldsActiveMutex(locker, secondThread, VALUE_A);
+        assertMutexNotActive(locker, VALUE_B);
 
         //then
         resumeAndDelay(secondThread);
         assertThreadCompleted(secondThread);
-        assertMutexNotActive(VALUE_A);
-        assertMutexNotActive(VALUE_B);
+        assertMutexNotActive(locker, VALUE_A);
+        assertMutexNotActive(locker, VALUE_B);
     }
 
 

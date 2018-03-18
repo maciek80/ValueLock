@@ -17,9 +17,18 @@ import org.gusiew.lock.util.StripedMap;
  */
 public class ReentrantLocker implements Locker {
 
-    //TODO Refactor to something readable
-    final static StripedMap<Object, ReentrantMutex> LOCKS = new StripedMap<>(16);
+    private static final int DEFAULT_NUMBER_OF_STRIPES = 16;
     private static final int ONE_ENTRANCE = 1;
+
+    final StripedMap<Object, ReentrantMutex> locks;
+
+    ReentrantLocker() {
+        this(DEFAULT_NUMBER_OF_STRIPES);
+    }
+
+    ReentrantLocker(int concurrencyLevel) {
+        locks = new StripedMap<>(concurrencyLevel);
+    }
 
     @Override
     public ReentrantMutex lock(final Object value) {
@@ -29,11 +38,11 @@ public class ReentrantLocker implements Locker {
 
         validate(value);
 
-        synchronized (LOCKS.getStripe(value)) {
-            reentrantMutex = LOCKS.get(value);
+        synchronized (locks.getStripe(value)) {
+            reentrantMutex = locks.get(value);
             if (reentrantMutex == null) {
                 reentrantMutex = createAndLock(value);
-                LOCKS.put(reentrantMutex.getLock(), reentrantMutex);
+                locks.put(reentrantMutex.getLock(), reentrantMutex);
             } else {
                 tryAcquireState = reentrantMutex.synchronizeAndTryAcquireState();
             }
@@ -56,7 +65,7 @@ public class ReentrantLocker implements Locker {
     }
 
     ReentrantMutex createAndLock(Object value) {
-        return new ReentrantMutex(value, ONE_ENTRANCE);
+        return new ReentrantMutex(value, ONE_ENTRANCE, locks);
     }
 
     void activeMutexesUpdated() {}
