@@ -1,8 +1,7 @@
 package org.gusiew.lock.impl;
 
 import org.gusiew.lock.api.Locker;
-
-import java.util.Map;
+import org.gusiew.lock.util.StripedMap;
 
 /**
  * Currently the only implementation of {@link Locker}.
@@ -18,8 +17,9 @@ import java.util.Map;
  */
 public class ReentrantLocker implements Locker {
 
+    //TODO Refactor to something readable
+    final static StripedMap<Object, ReentrantMutex> LOCKS = new StripedMap<>(16);
     private static final int ONE_ENTRANCE = 1;
-    private final Map<Object, ReentrantMutex> ACTIVE_MUTEXES = ReentrantMutex.getActiveMutexes();
 
     @Override
     public ReentrantMutex lock(final Object value) {
@@ -29,11 +29,11 @@ public class ReentrantLocker implements Locker {
 
         validate(value);
 
-        synchronized (ACTIVE_MUTEXES) {
-            reentrantMutex = ACTIVE_MUTEXES.get(value);
+        synchronized (LOCKS.getStripe(value)) {
+            reentrantMutex = LOCKS.get(value);
             if (reentrantMutex == null) {
                 reentrantMutex = createAndLock(value);
-                ACTIVE_MUTEXES.put(reentrantMutex.getLock(), reentrantMutex);
+                LOCKS.put(reentrantMutex.getLock(), reentrantMutex);
             } else {
                 tryAcquireState = reentrantMutex.synchronizeAndTryAcquireState();
             }

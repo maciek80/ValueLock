@@ -25,6 +25,7 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
     private static final Long VALUE_2 = 2L;
     private static final int ZERO_ENTRIES = 0;
     private static final boolean IGNORE_INTERRUPTIONS = false;
+    private final TestReentrantLocker locker = new TestReentrantLocker();
 
     @Test
     void shouldThrowWhenLockingOnNull() {

@@ -5,9 +5,6 @@ import org.gusiew.lock.impl.exception.MutexActiveButDifferent;
 import org.gusiew.lock.impl.exception.MutexHeldByOtherThreadException;
 import org.gusiew.lock.impl.exception.MutexNotActiveException;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.gusiew.lock.util.ConditionUtil.not;
 import static org.gusiew.lock.util.ThreadUtil.sameThreads;
 
@@ -17,9 +14,8 @@ import static org.gusiew.lock.util.ThreadUtil.sameThreads;
  */
 public class ReentrantMutex implements Mutex {
 
-    final static private Map<Object, ReentrantMutex> ACTIVE_MUTEXES = new HashMap<>();
-
     private final Object lock;
+    //TODO Is volatile really needed
     private volatile Thread holderThread;
     private volatile int entranceCount;
     private volatile int waitingThreadsCount;
@@ -42,8 +38,8 @@ public class ReentrantMutex implements Mutex {
      */
     @Override
     public void release() {
-        synchronized (ACTIVE_MUTEXES) {
-            validateWith(ACTIVE_MUTEXES.get(lock));
+        synchronized (ReentrantLocker.LOCKS.getStripe(lock)) {
+            validateWith(ReentrantLocker.LOCKS.get(lock));
             synchronizeAndRelease();
         }
     }
@@ -120,9 +116,10 @@ public class ReentrantMutex implements Mutex {
         entranceCount--;
         if(entranceCount == 0) {
             holderThread = null;
-            canNotify = true;
             if(waitingThreadsCount == 0) {
-                ACTIVE_MUTEXES.remove(lock);
+                ReentrantLocker.LOCKS.remove(lock);
+            } else {
+                canNotify = true;
             }
         } else if(entranceCount < 0) {
             throw new IllegalStateException("Entrance count should never be less than 0");
@@ -136,10 +133,6 @@ public class ReentrantMutex implements Mutex {
 
     Thread getHolderThread() {
         return holderThread;
-    }
-
-    static Map<Object, ReentrantMutex> getActiveMutexes() {
-        return ACTIVE_MUTEXES;
     }
 
     boolean noWaitingThreads() {
@@ -161,7 +154,6 @@ public class ReentrantMutex implements Mutex {
     private Thread getCurrentThread() {
         return Thread.currentThread();
     }
-
 
     @Override
     public String toString() {

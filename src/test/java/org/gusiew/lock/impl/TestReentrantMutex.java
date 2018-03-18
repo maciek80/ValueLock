@@ -18,8 +18,9 @@ public class TestReentrantMutex extends ReentrantMutex {
         return new TestReentrantMutex(value, reentrantMutex.getEntranceCount(), throwWhenInterrupted);
     }
 
+    //FIXME Probably not needed anymore
     public static TestReentrantMutex getFromActiveMutexes(Object lock) {
-        return (TestReentrantMutex) getActiveMutexes().get(lock);
+        return (TestReentrantMutex) ReentrantLocker.LOCKS.get(lock);
     }
 
     public static boolean isActiveMutex(Object value) {
@@ -71,8 +72,8 @@ public class TestReentrantMutex extends ReentrantMutex {
         }
         return super.handleInterruption();
     }
-
+    //TODO Dangerous
     public static boolean activeMutexesEmpty() {
-        return getActiveMutexes().isEmpty();
+        return ReentrantLocker.LOCKS.isEmpty();
     }
 }
