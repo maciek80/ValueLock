@@ -1,7 +1,5 @@
 package org.gusiew.lock.test.util;
 
-import org.gusiew.lock.impl.TestReentrantLocker;
-
 import java.util.Arrays;
 import java.util.function.BiConsumer;
 
@@ -17,13 +15,12 @@ public class ScenarioThreadDriver {
         return new ThreadSuspender();
     }
 
-    public static ScenarioThread startAndDelay(String threadName, BiConsumer<TestReentrantLocker, ScenarioThread.TestThreadMutexState> scenario) {
-        TestReentrantLocker lockSuspendLocker = new TestReentrantLocker.Builder().build();
-        return startAndDelay(threadName, scenario, lockSuspendLocker);
+    public static ScenarioThread startAndDelay(String threadName, BiConsumer<ThreadSuspender, ScenarioThread.TestThreadMutexState> scenario) {
+        return startAndDelay(threadName, scenario, ScenarioThread.Options.NO_OPTIONS);
     }
 
-    public static ScenarioThread startAndDelay(String threadName, BiConsumer<TestReentrantLocker, ScenarioThread.TestThreadMutexState> scenario, TestReentrantLocker testLocker) {
-        ScenarioThread thread = new ScenarioThread(threadName, testLocker, scenario);
+    public static ScenarioThread startAndDelay(String threadName, BiConsumer<ThreadSuspender, ScenarioThread.TestThreadMutexState> scenario, ScenarioThread.Options options) {
+        ScenarioThread thread = new ScenarioThread(threadName, scenario, options);
         thread.start();
         defaultDelay();
         return thread;

@@ -1,10 +1,10 @@
 package org.gusiew.lock.test;
 
-import org.gusiew.lock.impl.TestReentrantLocker;
 import org.gusiew.lock.impl.TestReentrantMutex;
 import org.gusiew.lock.impl.exception.MutexException;
 import org.gusiew.lock.impl.exception.MutexHeldByOtherThreadException;
 import org.gusiew.lock.test.util.ScenarioThread;
+import org.gusiew.lock.test.util.ThreadSuspender;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -14,6 +14,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 import static org.gusiew.lock.test.util.Assertions.*;
+import static org.gusiew.lock.test.util.ScenarioThread.Options.builder;
 import static org.gusiew.lock.test.util.ScenarioThreadDriver.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -124,6 +125,23 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         assertMutexNotActive(valueToCheck);
     }
 
+    private static Stream<ValuesTriple> valueAInstancesAndValueToCheckProvider() {
+        return getAllPossibleTriples();
+    }
+
+    private static Stream<ValuesTriple> getAllPossibleTriples() {
+        return Stream.of(ValuesTriple.triple(VALUE_A, VALUE_A, VALUE_A),
+                ValuesTriple.triple(VALUE_A, VALUE_A, VALUE_A_OTHER_INSTANCE),
+                ValuesTriple.triple(VALUE_A, VALUE_A_OTHER_INSTANCE, VALUE_A),
+                ValuesTriple.triple(VALUE_A, VALUE_A_OTHER_INSTANCE, VALUE_A_OTHER_INSTANCE),
+                ValuesTriple.triple(VALUE_A_OTHER_INSTANCE, VALUE_A, VALUE_A),
+                ValuesTriple.triple(VALUE_A_OTHER_INSTANCE, VALUE_A, VALUE_A_OTHER_INSTANCE),
+                ValuesTriple.triple(VALUE_A_OTHER_INSTANCE, VALUE_A_OTHER_INSTANCE, VALUE_A),
+                ValuesTriple.triple(VALUE_A_OTHER_INSTANCE, VALUE_A_OTHER_INSTANCE, VALUE_A_OTHER_INSTANCE)
+        );
+    }
+
+
     @Test
     void shouldPropagateInterruption() {
         //given
@@ -159,22 +177,6 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         //assert
         assertThreadCompleted(secondThread);
         assertMutexNotActive(VALUE_A);
-    }
-
-    private static Stream<ValuesTriple> valueAInstancesAndValueToCheckProvider() {
-        return getAllPossibleTriples();
-    }
-
-    private static Stream<ValuesTriple> getAllPossibleTriples() {
-        return Stream.of(ValuesTriple.triple(VALUE_A, VALUE_A, VALUE_A),
-                ValuesTriple.triple(VALUE_A, VALUE_A, VALUE_A_OTHER_INSTANCE),
-                ValuesTriple.triple(VALUE_A, VALUE_A_OTHER_INSTANCE, VALUE_A),
-                ValuesTriple.triple(VALUE_A, VALUE_A_OTHER_INSTANCE, VALUE_A_OTHER_INSTANCE),
-                ValuesTriple.triple(VALUE_A_OTHER_INSTANCE, VALUE_A, VALUE_A),
-                ValuesTriple.triple(VALUE_A_OTHER_INSTANCE, VALUE_A, VALUE_A_OTHER_INSTANCE),
-                ValuesTriple.triple(VALUE_A_OTHER_INSTANCE, VALUE_A_OTHER_INSTANCE, VALUE_A),
-                ValuesTriple.triple(VALUE_A_OTHER_INSTANCE, VALUE_A_OTHER_INSTANCE, VALUE_A_OTHER_INSTANCE)
-        );
     }
 
     @ParameterizedTest
@@ -379,11 +381,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         assertThreadHoldsActiveMutex(firstThread, VALUE_A);
 
         //then
-        TestReentrantLocker lockSuspendLocker = new TestReentrantLocker.Builder().withSuspender(createSuspender())
-                .withSuspendDuringLocking()
-                .build();
-
-        ScenarioThread secondThread = startAndDelay(THREAD_ONE, basicScenario(VALUE_A), lockSuspendLocker);
+        ScenarioThread secondThread = startAndDelay(THREAD_ONE, basicScenario(VALUE_A), builder().withSuspendDuringLocking(true).build());
 
         //assert
         assertThreadSuspended(firstThread);
@@ -421,11 +419,7 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         assertThreadHoldsActiveMutex(firstThread, VALUE_A);
 
         //then
-        TestReentrantLocker lockSuspendLocker = new TestReentrantLocker.Builder().withSuspender(createSuspender())
-                .withSuspendDuringLocking()
-                .build();
-
-        ScenarioThread secondThread = startAndDelay(THREAD_ONE, basicScenario(VALUE_A), lockSuspendLocker);
+        ScenarioThread secondThread = startAndDelay(THREAD_ONE, basicScenario(VALUE_A), builder().withSuspendDuringLocking(true).build());
 
         //assert
         assertThreadSuspended(firstThread);
@@ -474,19 +468,15 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
     @Test
     void simulateDeadlock() throws InterruptedException {
 
-        TestReentrantLocker interruptionLocker = new TestReentrantLocker.Builder().withSuspender(createSuspender())
-                .withThrowWhenInterrupted()
-                .build();
-
         //given
-        ScenarioThread firstThread = startAndDelay(THREAD_ONE, deadlockInterruptionScenario(VALUE_A, VALUE_B));
+        ScenarioThread firstThread = startAndDelay(THREAD_ONE, deadlockInterruptionScenario(VALUE_A, VALUE_B), builder().withThrowWhenInterrupted(true).build());
 
         //assert
         assertThreadSuspended(firstThread);
         assertThreadHoldsActiveMutex(firstThread, VALUE_A);
 
         //then
-        ScenarioThread secondThread = startAndDelay(THREAD_TWO, twoLocksScenario(VALUE_B, VALUE_A), interruptionLocker);
+        ScenarioThread secondThread = startAndDelay(THREAD_TWO, twoLocksScenario(VALUE_B, VALUE_A));
 
         //assert
         assertThreadSuspended(firstThread);
@@ -544,74 +534,75 @@ class TestReentrantLockerMultiThreadedTest extends AbstractReentrantLockerTest {
         assertMutexNotActive(VALUE_B);
     }
 
+
     //TODO grouping consumers in single class and maybe extract ?
 
-    private BiConsumer<TestReentrantLocker, ScenarioThread.TestThreadMutexState> basicScenario(Object value) {
-        return (l, ms) -> {
-            TestReentrantMutex m = l.lock(value);
+    private BiConsumer<ThreadSuspender, ScenarioThread.TestThreadMutexState> basicScenario(Object value) {
+        return (s, ms) -> {
+            TestReentrantMutex m = locker.lock(value);
             ms.put(value, m);
-            l.suspend();
+            s.suspend();
             m.release();
         };
     }
 
-    private BiConsumer<TestReentrantLocker, ScenarioThread.TestThreadMutexState> acquireInterruptionScenario(Object value) {
-        return (l, ms) -> {
-            TestReentrantMutex m = l.lock(value);
+    private BiConsumer<ThreadSuspender, ScenarioThread.TestThreadMutexState> acquireInterruptionScenario(Object value) {
+        return (s, ms) -> {
+            TestReentrantMutex m = locker.lock(value);
             ms.put(value, m);
             try {
                 Thread.sleep(MINIMAL_DELAY);
             } catch (InterruptedException e) {
-                l.suspend();
+                s.suspend();
             }
             m.release();
         };
     }
 
-    private BiConsumer<TestReentrantLocker, ScenarioThread.TestThreadMutexState> twoLocksScenario(Object value1, Object value2) {
-        return (l, ms) -> {
-            TestReentrantMutex m1 = l.lock(value1);
+    private BiConsumer<ThreadSuspender, ScenarioThread.TestThreadMutexState> twoLocksScenario(Object value1, Object value2) {
+        return (s, ms) -> {
+            TestReentrantMutex m1 = locker.lock(value1);
             ms.put(value1, m1);
-            l.suspend();
-            TestReentrantMutex m2 = l.lock(value2);
+            s.suspend();
+            TestReentrantMutex m2 = locker.lock(value2);
             ms.put(value2, m2);
-            l.suspend();
+            s.suspend();
             m1.release();
-            l.suspend();
+            s.suspend();
             m2.release();
         };
     }
 
-    private BiConsumer<TestReentrantLocker, ScenarioThread.TestThreadMutexState> deadlockInterruptionScenario(Object value1, Object value2) {
-        return (l, ms) -> {
-            TestReentrantMutex m = l.lock(value1);
+    private BiConsumer<ThreadSuspender, ScenarioThread.TestThreadMutexState> deadlockInterruptionScenario(Object value1, Object value2) {
+        return (s, ms) -> {
+            TestReentrantMutex m = locker.lock(value1);
             ms.put(value1, m);
-            l.suspend();
+            s.suspend();
             try {
-                l.lock(value2);
+                locker.lock(value2);
             } catch (MutexException e) {
-                l.suspend();
+                s.suspend();
             }
             m.release();
         };
     }
 
-    private BiConsumer<TestReentrantLocker, ScenarioThread.TestThreadMutexState> reacquireScenario(Object value) {
-        return (l, ms) -> {
-            TestReentrantMutex m1 = l.lock(value);
+    private BiConsumer<ThreadSuspender, ScenarioThread.TestThreadMutexState> reacquireScenario(Object value) {
+        return (s, ms) -> {
+            TestReentrantMutex m1 = locker.lock(value);
             ms.put(value, m1);
-            l.suspend();
+            s.suspend();
             m1.release();
-            l.suspend();
-            m1 = l.lock(value);
+            s.suspend();
+            m1 = locker.lock(value);
             ms.put(value, m1);
-            l.suspend();
+            s.suspend();
             m1.release();
         };
     }
 
-    private BiConsumer<TestReentrantLocker, ScenarioThread.TestThreadMutexState> releaseOnlyScenario(TestReentrantMutex m) {
-        return (l, ms) -> m.release();
+    private BiConsumer<ThreadSuspender, ScenarioThread.TestThreadMutexState> releaseOnlyScenario(TestReentrantMutex m) {
+        return (s, ms) -> m.release();
     }
 
     private static class ValuesTriple {

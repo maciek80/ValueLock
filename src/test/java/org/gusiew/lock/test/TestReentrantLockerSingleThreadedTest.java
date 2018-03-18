@@ -24,8 +24,6 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
     private static final Long VALUE_1_OTHER_INSTANCE = new Long(1L);
     private static final Long VALUE_2 = 2L;
     private static final int ZERO_ENTRIES = 0;
-    private static final boolean IGNORE_INTERRUPTIONS = false;
-    private final TestReentrantLocker locker = new TestReentrantLocker();
 
     @Test
     void shouldThrowWhenLockingOnNull() {
@@ -54,10 +52,11 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         assertNotActive(mutex);
     }
 
+    //FIXME simplify this test
     @Test
     void shouldThrowOnReleaseWithoutLocking() {
         //given
-        TestReentrantMutex mutex = new TestReentrantMutex(VALUE_A, ZERO_ENTRIES, IGNORE_INTERRUPTIONS);
+        TestReentrantMutex mutex = new TestReentrantMutex(VALUE_A, ZERO_ENTRIES);
         assertActiveMutexesEmpty();
         //then
         assertThrows(MutexNotActiveException.class, mutex::release);

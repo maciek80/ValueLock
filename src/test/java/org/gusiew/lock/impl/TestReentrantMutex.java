@@ -1,21 +1,22 @@
 package org.gusiew.lock.impl;
 
 import org.gusiew.lock.impl.exception.MutexException;
+import org.gusiew.lock.test.util.ScenarioThread;
 
 import static org.gusiew.lock.util.ThreadUtil.sameThreads;
 
 public class TestReentrantMutex extends ReentrantMutex {
 
-    private final boolean throwWhenInterrupted;
+    //private final boolean throwWhenInterrupted;
 
-    public TestReentrantMutex(Object value, int entranceCount, boolean throwWhenInterrupted) {
+    public TestReentrantMutex(Object value, int entranceCount) {
         super(value, entranceCount);
-        this.throwWhenInterrupted = throwWhenInterrupted;
+        //this.throwWhenInterrupted = throwWhenInterrupted;
     }
 
-    static TestReentrantMutex from(Object value, ReentrantMutex reentrantMutex, boolean throwWhenInterrupted) {
+    static TestReentrantMutex from(Object value, ReentrantMutex reentrantMutex) {
         //FIXME - this is risky cause some of the reentrantMutex properties are ignored, use reflection ?
-        return new TestReentrantMutex(value, reentrantMutex.getEntranceCount(), throwWhenInterrupted);
+        return new TestReentrantMutex(value, reentrantMutex.getEntranceCount());
     }
 
     //FIXME Probably not needed anymore
@@ -66,13 +67,15 @@ public class TestReentrantMutex extends ReentrantMutex {
 
     @Override
     protected boolean handleInterruption() {
-        if(throwWhenInterrupted) {
+        ScenarioThread.ThreadLocalContext c = ScenarioThread.getThreadContext();
+        if(c.getOptions().isThrowWhenInterrupted()) {
             decreaseWaitingThreadsCount();
             throw new MutexException();
         }
         return super.handleInterruption();
     }
-    //TODO Dangerous
+
+    //TODO check locks
     public static boolean activeMutexesEmpty() {
         return ReentrantLocker.LOCKS.isEmpty();
     }
