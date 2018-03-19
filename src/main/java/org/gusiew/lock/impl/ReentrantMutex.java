@@ -1,5 +1,8 @@
 package org.gusiew.lock.impl;
 
+import jdk.nashorn.internal.ir.annotations.Immutable;
+import net.jcip.annotations.GuardedBy;
+import net.jcip.annotations.ThreadSafe;
 import org.gusiew.lock.api.Mutex;
 import org.gusiew.lock.impl.exception.MutexActiveButDifferent;
 import org.gusiew.lock.impl.exception.MutexHeldByOtherThreadException;
@@ -13,13 +16,21 @@ import static org.gusiew.lock.util.ThreadUtil.sameThreads;
  * Currently the only implementation of {@link org.gusiew.lock.api.Mutex}.
  * <p>Produced by {@link ReentrantLocker}.
  */
+@ThreadSafe
 public class ReentrantMutex implements Mutex {
-
+    @Immutable
     private final Object lock;
+
+    /**
+     * See {@link StripedMap} for concurrency guarantees
+     */
     private final StripedMap<Object, ReentrantMutex> locks;
 
+    @GuardedBy("this")
     private Thread holderThread;
+    @GuardedBy("this")
     private int entranceCount;
+    @GuardedBy("this")
     private int waitingThreadsCount;
 
     protected ReentrantMutex(final Object value, StripedMap<Object, ReentrantMutex> locks) {

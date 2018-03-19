@@ -10,8 +10,6 @@ import org.gusiew.lock.test.util.ReflectionUtil;
 import org.gusiew.lock.test.util.ScenarioThread;
 import org.gusiew.lock.util.StripedMap;
 
-import java.util.Map;
-
 public class TestReentrantLocker implements Locker {
 
     private static final String MUTEX_FACTORY_FIELD_NAME = "mutexFactory";
@@ -87,15 +85,12 @@ public class TestReentrantLocker implements Locker {
     }
 
     private boolean internalCheckEmpty(StripedMap<Object, Mutex> stripedMap, int fromStripeIndex) {
-        boolean isEmpty;
-        if(fromStripeIndex == stripedMap.getNumberOfStripes()) {
-            return true;
+        if(fromStripeIndex < stripedMap.getNumberOfStripes()) {
+            synchronized (stripedMap.getStripe(fromStripeIndex)) {
+                return internalCheckEmpty(stripedMap, fromStripeIndex + 1);
+            }
         }
-        Map<Object, Mutex> stripe = stripedMap.getStripe(fromStripeIndex);
-        synchronized(stripe) {
-            isEmpty = stripe.isEmpty() && internalCheckEmpty(stripedMap, fromStripeIndex + 1);
-        }
-        return isEmpty;
+        return stripedMap.isEmpty();
     }
 
     private StripedMap<Object, Mutex> getLocks() {

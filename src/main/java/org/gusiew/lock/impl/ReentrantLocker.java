@@ -1,5 +1,6 @@
 package org.gusiew.lock.impl;
 
+import net.jcip.annotations.ThreadSafe;
 import org.gusiew.lock.api.Locker;
 import org.gusiew.lock.impl.internal.ActiveMutexesUpdatedHandler;
 import org.gusiew.lock.impl.internal.MutexFactory;
@@ -17,11 +18,16 @@ import org.gusiew.lock.util.StripedMap;
  * <ul>
  * <p>Assumes that value is immutable
  */
+@ThreadSafe
 public class ReentrantLocker implements Locker {
 
     private static final int DEFAULT_NUMBER_OF_STRIPES = 16;
 
+    /**
+     * See {@link StripedMap} for concurrency guarantees
+     */
     private final StripedMap<Object, ReentrantMutex> locks;
+
     private MutexFactory mutexFactory = this::createAndLock;
     private ActiveMutexesUpdatedHandler activeMutexesUpdatedHandler = () -> {};
 

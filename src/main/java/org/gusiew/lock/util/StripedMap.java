@@ -1,5 +1,7 @@
 package org.gusiew.lock.util;
 
+import net.jcip.annotations.GuardedBy;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -7,10 +9,9 @@ import java.util.stream.IntStream;
 
 public class StripedMap<K, V> {
 
-    //FIXME test
+    //TODO test
     //TODO implement map ?
     //TODO javadoc
-
     private final Map<Integer, Map<K, V>> mapsByStripe;
 
     @SuppressWarnings("unchecked")
@@ -21,18 +22,22 @@ public class StripedMap<K, V> {
                 .collect(Collectors.toMap(p -> p.stripeIndex, p -> p.map));
     }
 
+    @GuardedBy("getStripe(key)")
     public V get(K key) {
-        return mapsByStripe.get(getStripeIndex(key)).get(key);
+        return getStripe(key).get(key);
     }
 
+    @GuardedBy("getStripe(key)")
     public void put(K key, V value) {
-        mapsByStripe.get(getStripeIndex(key)).put(key, value);
+        getStripe(key).put(key, value);
     }
 
+    @GuardedBy("getStripe(key)")
     public void remove(K key) {
         mapsByStripe.get(getStripeIndex(key)).remove(key);
     }
 
+    @GuardedBy("getStripe(0)...getStripe(size-1)")
     public boolean isEmpty() {
         return mapsByStripe.values().stream().mapToInt(Map::size).sum() == 0;
     }
