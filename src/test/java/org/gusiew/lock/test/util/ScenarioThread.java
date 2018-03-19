@@ -1,6 +1,6 @@
 package org.gusiew.lock.test.util;
 
-import org.gusiew.lock.impl.TestReentrantMutex;
+import org.gusiew.lock.impl.util.TestReentrantMutex;
 
 import java.util.Collections;
 import java.util.HashMap;

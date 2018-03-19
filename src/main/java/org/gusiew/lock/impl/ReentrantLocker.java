@@ -1,6 +1,8 @@
 package org.gusiew.lock.impl;
 
 import org.gusiew.lock.api.Locker;
+import org.gusiew.lock.impl.internal.ActiveMutexesUpdatedHandler;
+import org.gusiew.lock.impl.internal.MutexFactory;
 import org.gusiew.lock.util.StripedMap;
 
 /**
@@ -18,15 +20,16 @@ import org.gusiew.lock.util.StripedMap;
 public class ReentrantLocker implements Locker {
 
     private static final int DEFAULT_NUMBER_OF_STRIPES = 16;
-    private static final int ONE_ENTRANCE = 1;
 
-    final StripedMap<Object, ReentrantMutex> locks;
+    private final StripedMap<Object, ReentrantMutex> locks;
+    private MutexFactory mutexFactory = this::createAndLock;
+    private ActiveMutexesUpdatedHandler activeMutexesUpdatedHandler = () -> {};
 
-    ReentrantLocker() {
+    public ReentrantLocker() {
         this(DEFAULT_NUMBER_OF_STRIPES);
     }
 
-    ReentrantLocker(int concurrencyLevel) {
+    public ReentrantLocker(int concurrencyLevel) {
         locks = new StripedMap<>(concurrencyLevel);
     }
 
@@ -41,14 +44,14 @@ public class ReentrantLocker implements Locker {
         synchronized (locks.getStripe(value)) {
             reentrantMutex = locks.get(value);
             if (reentrantMutex == null) {
-                reentrantMutex = createAndLock(value);
+                reentrantMutex = mutexFactory.createAndLock(value);
                 locks.put(reentrantMutex.getLock(), reentrantMutex);
             } else {
                 tryAcquireState = reentrantMutex.synchronizeAndTryAcquireState();
             }
         }
 
-        activeMutexesUpdated();
+        activeMutexesUpdatedHandler.activeMutexesUpdated();
 
         if (tryAcquireState) {
             wasInterrupted = reentrantMutex.synchronizeAndAcquireLock();
@@ -64,11 +67,9 @@ public class ReentrantLocker implements Locker {
         }
     }
 
-    ReentrantMutex createAndLock(Object value) {
-        return new ReentrantMutex(value, ONE_ENTRANCE, locks);
+    private ReentrantMutex createAndLock(Object value) {
+        return new ReentrantMutex(value, locks);
     }
-
-    void activeMutexesUpdated() {}
 
     private void setInterruptionOnThreadIfNeeded(boolean wasInterrupted) {
         if(wasInterrupted) {

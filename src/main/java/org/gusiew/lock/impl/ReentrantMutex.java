@@ -16,18 +16,18 @@ import static org.gusiew.lock.util.ThreadUtil.sameThreads;
 public class ReentrantMutex implements Mutex {
 
     private final Object lock;
-    final StripedMap<Object, ReentrantMutex> locks;
+    private final StripedMap<Object, ReentrantMutex> locks;
     //TODO Is volatile really needed
     private volatile Thread holderThread;
     private volatile int entranceCount;
     private volatile int waitingThreadsCount;
 
-    ReentrantMutex(final Object value, int entranceCount, StripedMap<Object, ReentrantMutex> locks) {
+    protected ReentrantMutex(final Object value, StripedMap<Object, ReentrantMutex> locks) {
         //TODO Assume value immutability for now
         this.lock = value;
-        this.holderThread = getCurrentThread();
-        this.entranceCount = entranceCount;
         this.locks = locks;
+        this.holderThread = getCurrentThread();
+        this.entranceCount = 1;
     }
 
     /**
@@ -68,7 +68,7 @@ public class ReentrantMutex implements Mutex {
         }
     }
 
-    Object getLock() {
+    protected Object getLock() {
         return lock;
     }
 
@@ -104,7 +104,7 @@ public class ReentrantMutex implements Mutex {
         return false;
     }
 
-    boolean handleInterruption() {
+    protected boolean handleInterruption() {
         return true;
     }
 
@@ -134,23 +134,23 @@ public class ReentrantMutex implements Mutex {
         notify();
     }
 
-    Thread getHolderThread() {
+    protected Thread getHolderThread() {
         return holderThread;
     }
 
-    boolean noWaitingThreads() {
+    protected boolean noWaitingThreads() {
         return waitingThreadsCount == 0;
     }
 
-    int getEntranceCount() {
+    protected int getEntranceCount() {
         return entranceCount;
     }
 
-    int getWaitingThreadsCount() {
+    protected int getWaitingThreadsCount() {
         return waitingThreadsCount;
     }
 
-    void decreaseWaitingThreadsCount() {
+    protected void decreaseWaitingThreadsCount() {
         waitingThreadsCount--;
     }
 

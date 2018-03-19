@@ -1,8 +1,8 @@
 package org.gusiew.lock.test;
 
-import org.gusiew.lock.impl.TestReentrantMutex;
 import org.gusiew.lock.impl.exception.MutexException;
 import org.gusiew.lock.impl.exception.MutexHeldByOtherThreadException;
+import org.gusiew.lock.impl.util.TestReentrantMutex;
 import org.gusiew.lock.test.util.ScenarioThread;
 import org.gusiew.lock.test.util.ThreadSuspender;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,8 @@
-package org.gusiew.lock.impl;
+package org.gusiew.lock.impl.util;
 
+import org.gusiew.lock.impl.ReentrantMutex;
 import org.gusiew.lock.impl.exception.MutexException;
+import org.gusiew.lock.test.util.ReflectionUtil;
 import org.gusiew.lock.test.util.ScenarioThread;
 import org.gusiew.lock.util.StripedMap;
 
@@ -8,16 +10,17 @@ import static org.gusiew.lock.util.ThreadUtil.sameThreads;
 
 public class TestReentrantMutex extends ReentrantMutex {
 
-    //private final boolean throwWhenInterrupted;
+    private static final String LOCK_FIELD_NAME = "lock";
+    private static final String LOCKS_FIELD_NAME = "locks";
 
-    public TestReentrantMutex(Object value, int entranceCount, StripedMap<Object, ReentrantMutex> locks) {
-        super(value, entranceCount, locks);
-        //this.throwWhenInterrupted = throwWhenInterrupted;
+    private TestReentrantMutex(Object value, StripedMap<Object, ReentrantMutex> locks) {
+        super(value, locks);
     }
 
-    static TestReentrantMutex from(Object value, ReentrantMutex reentrantMutex, StripedMap<Object, ReentrantMutex> locks) {
-        //FIXME - this is risky cause some of the reentrantMutex properties are ignored, use reflection ?
-        return new TestReentrantMutex(value, reentrantMutex.getEntranceCount(), locks);
+    static TestReentrantMutex from(ReentrantMutex reentrantMutex) {
+        Object lock = ReflectionUtil.getValue(reentrantMutex, LOCK_FIELD_NAME, Object.class);
+        StripedMap<Object, ReentrantMutex> locks = ReflectionUtil.getValue(reentrantMutex, LOCKS_FIELD_NAME, StripedMap.class);
+        return new TestReentrantMutex(lock, locks);
     }
 
     public boolean isHeld() {

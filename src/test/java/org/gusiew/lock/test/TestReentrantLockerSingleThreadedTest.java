@@ -1,11 +1,11 @@
 package org.gusiew.lock.test;
 
+import org.gusiew.lock.impl.ReentrantLocker;
 import org.gusiew.lock.impl.ReentrantMutex;
-import org.gusiew.lock.impl.TestReentrantLocker;
-import org.gusiew.lock.impl.TestReentrantMutex;
 import org.gusiew.lock.impl.exception.MutexActiveButDifferent;
 import org.gusiew.lock.impl.exception.MutexNotActiveException;
-import org.gusiew.lock.util.StripedMap;
+import org.gusiew.lock.impl.util.TestReentrantLocker;
+import org.gusiew.lock.impl.util.TestReentrantMutex;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -53,16 +53,6 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         mutex.release();
         //then
         assertNotActive(locker, mutex);
-    }
-
-    //FIXME simplify this test
-    @Test
-    void shouldThrowOnReleaseWithoutLocking() {
-        //given
-        TestReentrantMutex mutex = new TestReentrantMutex(VALUE_A, ZERO_ENTRIES, new StripedMap<>(1));
-        assertActiveMutexesEmpty(locker);
-        //then
-        assertThrows(MutexNotActiveException.class, mutex::release);
     }
 
     @Test
@@ -164,7 +154,7 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
     @ParameterizedTest
     @ValueSource(ints = {1, 2, 3, 4})
     void shouldApplyCorrectConcurrencyLevel(int level) {
-        assertEquals(level, new TestReentrantLocker(level).getConcurrencyLevel());
+        assertEquals(level, new TestReentrantLocker(new ReentrantLocker(level)).getConcurrencyLevel());
     }
 
     private static Fixture fixture(Object value1, Object value2, boolean expectedResult) {
