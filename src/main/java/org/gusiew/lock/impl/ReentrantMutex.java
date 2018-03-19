@@ -17,10 +17,10 @@ public class ReentrantMutex implements Mutex {
 
     private final Object lock;
     private final StripedMap<Object, ReentrantMutex> locks;
-    //TODO Is volatile really needed
-    private volatile Thread holderThread;
-    private volatile int entranceCount;
-    private volatile int waitingThreadsCount;
+
+    private Thread holderThread;
+    private int entranceCount;
+    private int waitingThreadsCount;
 
     protected ReentrantMutex(final Object value, StripedMap<Object, ReentrantMutex> locks) {
         //TODO Assume value immutability for now

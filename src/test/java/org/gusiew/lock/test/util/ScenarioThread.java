@@ -68,7 +68,11 @@ public class ScenarioThread extends Thread {
         private final Map<Object, TestReentrantMutex> map = Collections.synchronizedMap(new HashMap<>());
 
         synchronized TestReentrantMutex get(Object value) {
-            return map.get(value);
+            TestReentrantMutex mutex = map.get(value);
+            if(mutex != null) {
+                mutex = mutex.synchronizedSelfGet();
+            }
+            return mutex;
         }
 
         public synchronized void put(Object value, TestReentrantMutex testReentrantMutex) {

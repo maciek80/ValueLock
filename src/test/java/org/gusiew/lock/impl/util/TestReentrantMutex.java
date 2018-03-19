@@ -69,4 +69,9 @@ public class TestReentrantMutex extends ReentrantMutex {
         }
         return super.handleInterruption();
     }
+
+    //This is to get rid of volatile on fields on ReentrantMutex
+    public synchronized TestReentrantMutex synchronizedSelfGet() {
+        return this;
+    }
 }

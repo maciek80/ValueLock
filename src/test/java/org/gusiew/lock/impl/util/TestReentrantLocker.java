@@ -10,6 +10,8 @@ import org.gusiew.lock.test.util.ReflectionUtil;
 import org.gusiew.lock.test.util.ScenarioThread;
 import org.gusiew.lock.util.StripedMap;
 
+import java.util.Map;
+
 public class TestReentrantLocker implements Locker {
 
     private static final String MUTEX_FACTORY_FIELD_NAME = "mutexFactory";
@@ -62,20 +64,38 @@ public class TestReentrantLocker implements Locker {
         return getLocks().getNumberOfStripes();
     }
 
-    //FIXME synchronization !
     public TestReentrantMutex getFromActiveMutexes(Object lock) {
-        //TODO lcok stripe then mutex
-        return (TestReentrantMutex) getLocks().get(lock);
+        TestReentrantMutex mutex;
+        StripedMap<Object, Mutex> stripedMap = getLocks();
+        synchronized (stripedMap.getStripe(lock)) {
+            mutex = (TestReentrantMutex) stripedMap.get(lock);
+            if(mutex != null) {
+                mutex = mutex.synchronizedSelfGet();
+            }
+        }
+        return mutex;
     }
 
     public boolean isActiveMutex(Object value) {
-        //TODO lcok stripe then mutex
         return getFromActiveMutexes(value) != null;
     }
 
     public boolean activeMutexesEmpty() {
-        //TODO lock all stipes then count
-        return getLocks().isEmpty();
+
+        StripedMap<Object, Mutex> stripedMap = getLocks();
+        return internalCheckEmpty(stripedMap, 0);
+    }
+
+    private boolean internalCheckEmpty(StripedMap<Object, Mutex> stripedMap, int fromStripeIndex) {
+        boolean isEmpty;
+        if(fromStripeIndex == stripedMap.getNumberOfStripes()) {
+            return true;
+        }
+        Map<Object, Mutex> stripe = stripedMap.getStripe(fromStripeIndex);
+        synchronized(stripe) {
+            isEmpty = stripe.isEmpty() && internalCheckEmpty(stripedMap, fromStripeIndex + 1);
+        }
+        return isEmpty;
     }
 
     private StripedMap<Object, Mutex> getLocks() {
