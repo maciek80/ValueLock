@@ -14,7 +14,8 @@ import static org.gusiew.lock.util.ThreadUtil.sameThreads;
 
 /**
  * Currently the only implementation of {@link org.gusiew.lock.api.Mutex}.
- * <p>Produced by {@link ReentrantLocker}.
+ * <p>Produced by {@link ReentrantLocker#lock}
+ * <p> See {@link ReentrantLocker} for more details
  */
 @ThreadSafe
 public class ReentrantMutex implements Mutex {

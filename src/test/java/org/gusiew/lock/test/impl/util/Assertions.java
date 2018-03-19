@@ -1,7 +1,4 @@
-package org.gusiew.lock.test.util;
-
-import org.gusiew.lock.impl.util.TestReentrantLocker;
-import org.gusiew.lock.impl.util.TestReentrantMutex;
+package org.gusiew.lock.test.impl.util;
 
 import java.util.List;
 

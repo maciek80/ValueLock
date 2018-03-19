@@ -1,4 +1,4 @@
-package org.gusiew.lock.test;
+package org.gusiew.lock.test.impl;
 
 import org.gusiew.lock.api.Locker;
 import org.gusiew.lock.api.Mutex;

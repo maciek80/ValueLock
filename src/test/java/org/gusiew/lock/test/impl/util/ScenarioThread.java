@@ -1,6 +1,4 @@
-package org.gusiew.lock.test.util;
-
-import org.gusiew.lock.impl.util.TestReentrantMutex;
+package org.gusiew.lock.test.impl.util;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,7 +34,7 @@ public class ScenarioThread extends Thread {
         }
     }
 
-    public static ThreadLocalContext getThreadContext() {
+    static ThreadLocalContext getThreadContext() {
         return threadContext.get();
     }
 
@@ -92,11 +90,11 @@ public class ScenarioThread extends Thread {
             this.throwWhenInterrupted = throwWhenInterrupted;
         }
 
-        public boolean isSuspendDuringLocking() {
+        boolean isSuspendDuringLocking() {
             return suspendDuringLocking;
         }
 
-        public boolean isThrowWhenInterrupted() {
+        boolean isThrowWhenInterrupted() {
             return throwWhenInterrupted;
         }
 
@@ -127,7 +125,7 @@ public class ScenarioThread extends Thread {
         }
     }
 
-    public static class ThreadLocalContext {
+    static class ThreadLocalContext {
 
         static final ThreadLocalContext EMPTY = new ThreadLocalContext(ThreadSuspender.NULL_OBJECT, Options.NO_OPTIONS);
 
@@ -139,11 +137,11 @@ public class ScenarioThread extends Thread {
             this.options = options;
         }
 
-        public ThreadSuspender getSuspender() {
+        ThreadSuspender getSuspender() {
             return suspender;
         }
 
-        public Options getOptions() {
+        Options getOptions() {
             return options;
         }
     }

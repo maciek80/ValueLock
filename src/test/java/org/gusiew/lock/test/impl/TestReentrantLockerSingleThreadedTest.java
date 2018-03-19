@@ -1,11 +1,12 @@
-package org.gusiew.lock.test;
+package org.gusiew.lock.test.impl;
 
 import org.gusiew.lock.impl.ReentrantLocker;
 import org.gusiew.lock.impl.ReentrantMutex;
 import org.gusiew.lock.impl.exception.MutexActiveButDifferent;
 import org.gusiew.lock.impl.exception.MutexNotActiveException;
-import org.gusiew.lock.impl.util.TestReentrantLocker;
-import org.gusiew.lock.impl.util.TestReentrantMutex;
+import org.gusiew.lock.test.impl.util.Assertions;
+import org.gusiew.lock.test.impl.util.TestReentrantLocker;
+import org.gusiew.lock.test.impl.util.TestReentrantMutex;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -16,7 +17,6 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static org.gusiew.lock.test.util.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -41,7 +41,7 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         TestReentrantMutex mutex = locker.lock(VALUE_A);
         //then
         assertEquals(VALUE_A, mutex.getLock());
-        assertActiveAndHeldByCurrentThread(locker, mutex);
+        Assertions.assertActiveAndHeldByCurrentThread(locker, mutex);
         //teardown
         mutex.release();
     }
@@ -52,7 +52,7 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         TestReentrantMutex mutex = locker.lock(VALUE_A);
         mutex.release();
         //then
-        assertNotActive(locker, mutex);
+        Assertions.assertNotActive(locker, mutex);
     }
 
     @Test
@@ -71,8 +71,8 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         TestReentrantMutex reentrantMutex = locker.lock(fixture.value1);
         TestReentrantMutex otherReentrantMutex = locker.lock(fixture.value2);
         //then
-        assertActiveAndHeldByCurrentThread(locker, reentrantMutex);
-        assertActiveAndHeldByCurrentThread(locker, otherReentrantMutex);
+        Assertions.assertActiveAndHeldByCurrentThread(locker, reentrantMutex);
+        Assertions.assertActiveAndHeldByCurrentThread(locker, otherReentrantMutex);
         assertEquals(fixture.expectedResult, reentrantMutex == otherReentrantMutex);
 
         //teardown
@@ -105,19 +105,19 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         int entrances = sameValuesToLock.size();
 
         //then
-        assertActiveAndHeldByCurrentThreadWithEntrances(locker, mutex, entrances);
+        Assertions.assertActiveAndHeldByCurrentThreadWithEntrances(locker, mutex, entrances);
 
         //then
         mutex.release();
-        assertActiveAndHeldByCurrentThreadWithEntrances(locker, mutex, --entrances);
+        Assertions.assertActiveAndHeldByCurrentThreadWithEntrances(locker, mutex, --entrances);
 
         //then
         mutex.release();
-        assertActiveAndHeldByCurrentThreadWithEntrances(locker, mutex, --entrances);
+        Assertions.assertActiveAndHeldByCurrentThreadWithEntrances(locker, mutex, --entrances);
 
         //then
         mutex.release();
-        assertNotActive(locker, mutex);
+        Assertions.assertNotActive(locker, mutex);
     }
 
     @Test
@@ -128,8 +128,8 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
         mutexB.release();
         mutexA.release();
         //then
-        assertNotActive(locker, mutexA);
-        assertNotActive(locker, mutexB);
+        Assertions.assertNotActive(locker, mutexA);
+        Assertions.assertNotActive(locker, mutexB);
     }
 
     @Test
@@ -148,13 +148,13 @@ class TestReentrantLockerSingleThreadedTest extends AbstractReentrantLockerTest 
 
     @Test
     void shouldApplyDefaultConcurrencyLevel() {
-        assertEquals(DEFAULT_CONCURRENCY_LEVEL, locker.getConcurrencyLevel());
+        org.junit.jupiter.api.Assertions.assertEquals(DEFAULT_CONCURRENCY_LEVEL, locker.getConcurrencyLevel());
     }
 
     @ParameterizedTest
     @ValueSource(ints = {1, 2, 3, 4})
     void shouldApplyCorrectConcurrencyLevel(int level) {
-        assertEquals(level, new TestReentrantLocker(new ReentrantLocker(level)).getConcurrencyLevel());
+        org.junit.jupiter.api.Assertions.assertEquals(level, new TestReentrantLocker(new ReentrantLocker(level)).getConcurrencyLevel());
     }
 
     private static Fixture fixture(Object value1, Object value2, boolean expectedResult) {

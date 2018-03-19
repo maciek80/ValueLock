@@ -13,10 +13,16 @@ import org.gusiew.lock.util.StripedMap;
  * <ul>
  *   <li>Allows holder thread to reenter but needs to be released same number of times as acquired</li>
  *   <li>Has synchronized/wait like semantics (does not provide fairness)</li>
- *   <li>Ignores interruptions</li>
+ *   <li>Does not react to interruptions but propagates the status </li>
  *   <li>Mutual exclusive locking, may deadlock if used inappropriately</li>
- * <ul>
+ *   <li>If number of distinct locks and threads is known in advance,
+ *        concurrency level can be set to relax synchronization.
+ *        Concurrency level specifies number of stripes in locker lock registry.
+ *        Each stripe is locked independently
+ *   </li>
+ * </ul>
  * <p>Assumes that value is immutable
+ * <p>Lock entrances count and number of waiting threads are stored as ints so int max value is the limit
  */
 @ThreadSafe
 public class ReentrantLocker implements Locker {
@@ -31,10 +37,17 @@ public class ReentrantLocker implements Locker {
     private MutexFactory mutexFactory = this::createAndLock;
     private ActiveMutexesUpdatedHandler activeMutexesUpdatedHandler = () -> {};
 
+    /**
+     * Default constructor, sets concurrency level to 16
+     */
     public ReentrantLocker() {
         this(DEFAULT_NUMBER_OF_STRIPES);
     }
 
+    /**
+     * Creates ReentrantLocker with specified concurrency level
+     * @param concurrencyLevel concurrency level to set, see class comments
+     */
     public ReentrantLocker(int concurrencyLevel) {
         locks = new StripedMap<>(concurrencyLevel);
     }

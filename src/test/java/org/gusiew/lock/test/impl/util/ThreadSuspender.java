@@ -1,6 +1,6 @@
-package org.gusiew.lock.test.util;
+package org.gusiew.lock.test.impl.util;
 
-import static org.gusiew.lock.util.ConditionUtil.not;
+import org.gusiew.lock.util.ConditionUtil;
 
 /**
  * Util class for thread coordination. Coordinated thread suspends and coordinator thread can resume it
@@ -9,7 +9,7 @@ public class ThreadSuspender {
 
     private volatile boolean suspended = false;
 
-    public static final ThreadSuspender NULL_OBJECT = new ThreadSuspender() {
+    static final ThreadSuspender NULL_OBJECT = new ThreadSuspender() {
         @Override
         public void suspend() {}
 
@@ -43,7 +43,7 @@ public class ThreadSuspender {
      * @throws IllegalStateException if not suspended
      */
     public synchronized void resume() {
-        if(not(suspended)) {
+        if(ConditionUtil.not(suspended)) {
             throw new IllegalStateException("Thread not suspended");
         }
         suspended = false;

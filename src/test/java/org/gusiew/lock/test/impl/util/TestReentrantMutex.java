@@ -1,12 +1,9 @@
-package org.gusiew.lock.impl.util;
+package org.gusiew.lock.test.impl.util;
 
 import org.gusiew.lock.impl.ReentrantMutex;
 import org.gusiew.lock.impl.exception.MutexException;
-import org.gusiew.lock.test.util.ReflectionUtil;
-import org.gusiew.lock.test.util.ScenarioThread;
 import org.gusiew.lock.util.StripedMap;
-
-import static org.gusiew.lock.util.ThreadUtil.sameThreads;
+import org.gusiew.lock.util.ThreadUtil;
 
 public class TestReentrantMutex extends ReentrantMutex {
 
@@ -23,12 +20,12 @@ public class TestReentrantMutex extends ReentrantMutex {
         return new TestReentrantMutex(lock, locks);
     }
 
-    public boolean isHeld() {
+    boolean isHeld() {
         return getHolderThread() != null;
     }
 
-    public boolean isHeldByCurrentThread() {
-        return sameThreads(Thread.currentThread(), getHolderThread());
+    boolean isHeldByCurrentThread() {
+        return ThreadUtil.sameThreads(Thread.currentThread(), getHolderThread());
     }
 
     @Override
@@ -56,7 +53,7 @@ public class TestReentrantMutex extends ReentrantMutex {
         return super.getEntranceCount();
     }
 
-    public boolean noEntrances() {
+    boolean noEntrances() {
         return getEntranceCount() == 0;
     }
 
@@ -65,13 +62,13 @@ public class TestReentrantMutex extends ReentrantMutex {
         ScenarioThread.ThreadLocalContext c = ScenarioThread.getThreadContext();
         if(c.getOptions().isThrowWhenInterrupted()) {
             decreaseWaitingThreadsCount();
-            throw new MutexException();
+            throw new MutexException(){};
         }
         return super.handleInterruption();
     }
 
     //This is to get rid of volatile on fields on ReentrantMutex
-    public synchronized TestReentrantMutex synchronizedSelfGet() {
+    synchronized TestReentrantMutex synchronizedSelfGet() {
         return this;
     }
 }

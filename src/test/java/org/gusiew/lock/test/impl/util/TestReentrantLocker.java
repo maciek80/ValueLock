@@ -1,4 +1,4 @@
-package org.gusiew.lock.impl.util;
+package org.gusiew.lock.test.impl.util;
 
 import org.gusiew.lock.api.Locker;
 import org.gusiew.lock.api.Mutex;
@@ -6,8 +6,6 @@ import org.gusiew.lock.impl.ReentrantLocker;
 import org.gusiew.lock.impl.ReentrantMutex;
 import org.gusiew.lock.impl.internal.ActiveMutexesUpdatedHandler;
 import org.gusiew.lock.impl.internal.MutexFactory;
-import org.gusiew.lock.test.util.ReflectionUtil;
-import org.gusiew.lock.test.util.ScenarioThread;
 import org.gusiew.lock.util.StripedMap;
 
 public class TestReentrantLocker implements Locker {
@@ -62,7 +60,7 @@ public class TestReentrantLocker implements Locker {
         return getLocks().getNumberOfStripes();
     }
 
-    public TestReentrantMutex getFromActiveMutexes(Object lock) {
+    TestReentrantMutex getFromActiveMutexes(Object lock) {
         TestReentrantMutex mutex;
         StripedMap<Object, Mutex> stripedMap = getLocks();
         synchronized (stripedMap.getStripe(lock)) {
@@ -74,12 +72,11 @@ public class TestReentrantLocker implements Locker {
         return mutex;
     }
 
-    public boolean isActiveMutex(Object value) {
+    boolean isActiveMutex(Object value) {
         return getFromActiveMutexes(value) != null;
     }
 
-    public boolean activeMutexesEmpty() {
-
+    boolean activeMutexesEmpty() {
         StripedMap<Object, Mutex> stripedMap = getLocks();
         return internalCheckEmpty(stripedMap, 0);
     }
@@ -93,8 +90,8 @@ public class TestReentrantLocker implements Locker {
         return stripedMap.isEmpty();
     }
 
+    @SuppressWarnings("unchecked")
     private StripedMap<Object, Mutex> getLocks() {
-        //TODO Generics
         return ReflectionUtil.getValue(reentrantLocker, LOCKS_FIELD_NAME, StripedMap.class);
     }
 }

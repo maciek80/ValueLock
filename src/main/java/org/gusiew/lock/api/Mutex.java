@@ -13,6 +13,9 @@ public interface Mutex {
     /**
      * @see Locker
      *
+     * @param mutex mutex that should be released when runnable is completed or runtime exception is thrown
+     * @param runnable runnable to execute, may throw runtime exceptions
+     *
      */
     static void withRunnable(Mutex mutex, Runnable runnable) {
         try {
@@ -24,6 +27,9 @@ public interface Mutex {
 
     /**
      * @see Locker
+     *
+     * @param mutex mutex that should be released when runnable is completed or exception is thrown
+     * @param throwsRunnable throwsRunnable to execute, may throw runtime and checked exceptions
      *
      * @throws Exception propagated exception
      */

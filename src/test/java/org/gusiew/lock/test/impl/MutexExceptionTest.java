@@ -1,4 +1,4 @@
-package org.gusiew.lock.test;
+package org.gusiew.lock.test.impl;
 
 import org.gusiew.lock.impl.exception.MutexActiveButDifferent;
 import org.gusiew.lock.impl.exception.MutexException;

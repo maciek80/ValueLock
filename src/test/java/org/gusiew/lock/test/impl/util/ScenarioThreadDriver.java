@@ -1,4 +1,4 @@
-package org.gusiew.lock.test.util;
+package org.gusiew.lock.test.impl.util;
 
 import java.util.Arrays;
 import java.util.function.BiConsumer;

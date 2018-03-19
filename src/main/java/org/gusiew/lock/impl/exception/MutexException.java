@@ -1,7 +1,7 @@
 package org.gusiew.lock.impl.exception;
 
 /**
- * Base exception class for Locker
+ * Base exception class for exceptions thrown during {@link org.gusiew.lock.impl.ReentrantMutex#release()}
  */
-public class MutexException extends RuntimeException {
+public abstract class MutexException extends RuntimeException {
 }

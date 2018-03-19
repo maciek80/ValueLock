@@ -1,10 +1,10 @@
-package org.gusiew.lock.test.util;
+package org.gusiew.lock.test.impl.util;
 
 import java.lang.reflect.Field;
 
-public class ReflectionUtil {
+class ReflectionUtil {
 
-    public static <T> T getValue(Object o, String fieldName, Class<T> returnClazz) {
+    static <T> T getValue(Object o, String fieldName, Class<T> returnClazz) {
         T result = null;
         try {
             Field field = o.getClass().getDeclaredField(fieldName);
@@ -19,7 +19,7 @@ public class ReflectionUtil {
         return result;
     }
 
-    public static void setValue(Object o, String fieldName, Object value) {
+    static void setValue(Object o, String fieldName, Object value) {
         try {
             Field field = o.getClass().getDeclaredField(fieldName);
             field.setAccessible(true);

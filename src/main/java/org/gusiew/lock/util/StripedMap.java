@@ -11,7 +11,6 @@ public class StripedMap<K, V> {
 
     //TODO test
     //TODO implement map ?
-    //TODO javadoc
     private final Map<Integer, Map<K, V>> mapsByStripe;
 
     @SuppressWarnings("unchecked")
