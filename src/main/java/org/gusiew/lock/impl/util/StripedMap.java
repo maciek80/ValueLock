@@ -1,4 +1,4 @@
-package org.gusiew.lock.util;
+package org.gusiew.lock.impl.util;
 
 import net.jcip.annotations.GuardedBy;
 

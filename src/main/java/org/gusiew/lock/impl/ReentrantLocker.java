@@ -4,7 +4,7 @@ import net.jcip.annotations.ThreadSafe;
 import org.gusiew.lock.api.Locker;
 import org.gusiew.lock.impl.internal.ActiveMutexesUpdatedHandler;
 import org.gusiew.lock.impl.internal.MutexFactory;
-import org.gusiew.lock.util.StripedMap;
+import org.gusiew.lock.impl.util.StripedMap;
 
 /**
  * Currently the only implementation of {@link Locker}.

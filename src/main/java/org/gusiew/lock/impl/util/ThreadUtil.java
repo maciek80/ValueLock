@@ -1,4 +1,4 @@
-package org.gusiew.lock.util;
+package org.gusiew.lock.impl.util;
 
 public class ThreadUtil {
     public static boolean sameThreads(Thread thread1, Thread thread2) {

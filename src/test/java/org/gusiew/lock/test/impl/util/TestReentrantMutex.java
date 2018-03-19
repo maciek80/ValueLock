@@ -2,8 +2,8 @@ package org.gusiew.lock.test.impl.util;
 
 import org.gusiew.lock.impl.ReentrantMutex;
 import org.gusiew.lock.impl.exception.MutexException;
-import org.gusiew.lock.util.StripedMap;
-import org.gusiew.lock.util.ThreadUtil;
+import org.gusiew.lock.impl.util.StripedMap;
+import org.gusiew.lock.impl.util.ThreadUtil;
 
 public class TestReentrantMutex extends ReentrantMutex {
 
@@ -14,6 +14,7 @@ public class TestReentrantMutex extends ReentrantMutex {
         super(value, locks);
     }
 
+    @SuppressWarnings("unchecked")
     static TestReentrantMutex from(ReentrantMutex reentrantMutex) {
         Object lock = ReflectionUtil.getValue(reentrantMutex, LOCK_FIELD_NAME, Object.class);
         StripedMap<Object, ReentrantMutex> locks = ReflectionUtil.getValue(reentrantMutex, LOCKS_FIELD_NAME, StripedMap.class);

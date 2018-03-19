@@ -1,6 +1,6 @@
 package org.gusiew.lock.test.impl.util;
 
-import org.gusiew.lock.util.ConditionUtil;
+import org.gusiew.lock.impl.util.ConditionUtil;
 
 /**
  * Util class for thread coordination. Coordinated thread suspends and coordinator thread can resume it

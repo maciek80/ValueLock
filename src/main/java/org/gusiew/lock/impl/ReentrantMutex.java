@@ -7,10 +7,10 @@ import org.gusiew.lock.api.Mutex;
 import org.gusiew.lock.impl.exception.MutexActiveButDifferent;
 import org.gusiew.lock.impl.exception.MutexHeldByOtherThreadException;
 import org.gusiew.lock.impl.exception.MutexNotActiveException;
-import org.gusiew.lock.util.StripedMap;
+import org.gusiew.lock.impl.util.StripedMap;
 
-import static org.gusiew.lock.util.ConditionUtil.not;
-import static org.gusiew.lock.util.ThreadUtil.sameThreads;
+import static org.gusiew.lock.impl.util.ConditionUtil.not;
+import static org.gusiew.lock.impl.util.ThreadUtil.sameThreads;
 
 /**
  * Currently the only implementation of {@link org.gusiew.lock.api.Mutex}.

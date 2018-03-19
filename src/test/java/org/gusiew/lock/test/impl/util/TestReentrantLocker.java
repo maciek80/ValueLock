@@ -6,7 +6,7 @@ import org.gusiew.lock.impl.ReentrantLocker;
 import org.gusiew.lock.impl.ReentrantMutex;
 import org.gusiew.lock.impl.internal.ActiveMutexesUpdatedHandler;
 import org.gusiew.lock.impl.internal.MutexFactory;
-import org.gusiew.lock.util.StripedMap;
+import org.gusiew.lock.impl.util.StripedMap;
 
 public class TestReentrantLocker implements Locker {
 
